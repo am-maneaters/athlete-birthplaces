@@ -1,9 +1,6 @@
 import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
-import {
-  useFeatureLayer,
-  useFeatureLayerView,
-} from '../hooks/useGraphicsLayer';
+
 import { useEffect } from 'react';
 import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
 import {
@@ -21,6 +18,11 @@ import Graphic from '@arcgis/core/Graphic';
 import Polyline from '@arcgis/core/geometry/Polyline';
 import * as geodesicUtils from '@arcgis/core/geometry/support/geodesicUtils';
 import { array } from 'yup';
+
+import {
+  useFeatureLayer,
+  useFeatureLayerView,
+} from '../hooks/useGraphicsLayer';
 
 const nhlPlayersLayerUrl =
   'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_API_Athletes/FeatureServer/0';

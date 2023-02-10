@@ -14,13 +14,13 @@ import {
 
 import { useMemo, useState } from 'react';
 import MapView from '@arcgis/core/views/MapView';
-import { useOnEvent } from '../hooks/useOnEvent';
 import { isGraphicsHit } from '../utils/esriUtils';
 
 import Basemap from '@arcgis/core/Basemap';
 import { useAthletesLayer, useTeamsLayer } from './layerHooks';
 import { useSegmentedControl } from './calciteHooks';
 import { AthleteListItem, Sport } from './AthleteListItem';
+import { useOnEvent } from '../hooks';
 
 export function NhlPlayersDemo() {
   const [mapView, setMapView] = useState<MapView>();

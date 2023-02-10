@@ -1,38 +1,27 @@
 {
-  "name": "arcgis-react-utils",
+  "name": "espn-athletes-viewer",
   "version": "1.0.0",
-  "description": "React hook wrappers around the @arcgis/core library",
+  "description": "Espn API Athletes Viewer",
   "main": "index.js",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/samMatenaer/arcgis-react-utils.git"
+    "url": "git+https://github.com/samMatenaer/espn-athletes-viewer.git"
   },
   "scripts": {
     "dev": "vite",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && vite build"
   },
-  "keywords": [
-    "arcgis",
-    "hooks"
-  ],
+  "keywords": [],
   "devDependencies": {
     "@arcgis/core": "^4.25.5",
     "@esri/calcite-components-react": "^1.0.0",
     "@types/node": "^18.11.18",
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
-    "@typescript-eslint/eslint-plugin": "^5.49.0",
-    "@typescript-eslint/parser": "^5.49.0",
     "@vitejs/plugin-react": "^3.0.1",
-    "eslint": "^8.32.0",
-    "eslint-config-prettier": "^8.6.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "^7.32.1",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-unicorn": "^45.0.2",
-    "prettier": "2.8.3",
+    "eslint-config-sem": "^1.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^4.9.4",
@@ -44,12 +33,6 @@
   },
   "author": "Sam Matenaer",
   "license": "Apache-2.0",
-  "exports": {
-    ".": {
-      "import": "./dist/arcgis-react-utils.es.js",
-      "require": "./dist/arcgis-react-utils.umd.js"
-    }
-  },
   "prettier": {
     "singleQuote": true
   },

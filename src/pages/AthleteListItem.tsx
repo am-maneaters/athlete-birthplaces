@@ -47,6 +47,7 @@ export const AthleteListItem = ({
     >
       <img
         src={teamLogoUrl}
+        alt="Team Logo"
         height="100px"
         style={{
           marginLeft: 25,
@@ -56,6 +57,7 @@ export const AthleteListItem = ({
       />
       <img
         src={getAthleteHeadshot(id, type as Sport, 100, 140)}
+        alt="Athlete Headshot"
         height="100px"
         width="140px"
         // overlay the team logo

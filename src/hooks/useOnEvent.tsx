@@ -1,6 +1,6 @@
 import { on } from '@arcgis/core/core/reactiveUtils';
 import { useEffect } from 'react';
-import { Overloads } from '../typings/utilityTypes';
+import type { Overloads } from '../typings/utilityTypes';
 
 /**
  * Hook wrapper around ArcGIS JS API 'on' reactiveUtils function.

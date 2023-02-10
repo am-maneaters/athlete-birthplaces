@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { watch, on } from '@arcgis/core/core/reactiveUtils';
-import { Overloads } from '../typings/utilityTypes';
+import type { Overloads } from '../typings/utilityTypes';
 
 export function useWatchEffect<T>(
   getValue: () => T,

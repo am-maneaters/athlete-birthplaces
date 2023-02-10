@@ -1,5 +1,4 @@
 import MapView from '@arcgis/core/views/MapView';
-import SceneView from '@arcgis/core/views/SceneView';
 import React, {
   useRef,
   useEffect,
@@ -8,7 +7,6 @@ import React, {
   useState,
 } from 'react';
 import Map from '@arcgis/core/WebMap';
-import { useWatchEffect } from '../hooks';
 
 export const MapContext = createContext<MapView | undefined>(new MapView());
 
