@@ -1,0 +1,16 @@
+div.MapUIComponent {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0px !important;
+}
+
+div.esri-ui-inner-container > * {
+  max-height: 100%;
+  overflow: hidden;
+}
+
+div.MapUIComponent > * {
+  pointer-events: auto;
+}

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useOnEvent } from '../hooks/useOnEvent';
-import { useWatchEffect } from '../hooks';
+import { useWatchEffect } from '.';
 
 export const WidgetComponent = <T extends __esri.Widget>({
   widgetInit,

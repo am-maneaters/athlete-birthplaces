@@ -3,8 +3,9 @@ import { createRoot } from 'react-dom/client';
 import '@arcgis/core/assets/esri/themes/dark/main.css';
 
 import './calcite-imports';
+import './index.css';
 
-import { MapStateProvider } from './hooks/MapStateContext';
+import { MapStateProvider } from './arcgisUtils/MapStateContext';
 import { NhlPlayersDemo } from './pages/NhlPlayersDemo';
 
 import { setAssetPath } from '@esri/calcite-components/dist/components';

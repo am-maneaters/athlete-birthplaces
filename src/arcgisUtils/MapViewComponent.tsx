@@ -68,7 +68,7 @@ export default function MapViewComponent({
 
   return (
     <MapContext.Provider value={mapView}>
-      <div ref={mapContainer} {...divAttributes}>
+      <div ref={mapContainer} style={{ overflow: 'auto' }} {...divAttributes}>
         {mapView && children}
       </div>
     </MapContext.Provider>

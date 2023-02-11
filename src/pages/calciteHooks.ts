@@ -1,8 +1,13 @@
 import { CalciteSegmentedControlCustomEvent } from '@esri/calcite-components';
 import { useState, useCallback } from 'react';
 
-export const useSegmentedControl = <T extends string>(defaultVal: T) => {
+export const useSegmentedControl = <T extends string>(
+  defaultVal: T,
+  options?: { booleanProperty: string; labelChildren: boolean }
+) => {
   const [selected, setSelected] = useState<T>(defaultVal);
+  const booleanProperty = options?.booleanProperty || 'checked';
+  const labelChildren = options?.labelChildren || false;
 
   const handleSelectionChange = useCallback(
     (e: CalciteSegmentedControlCustomEvent<void>) => {
@@ -14,10 +19,10 @@ export const useSegmentedControl = <T extends string>(defaultVal: T) => {
   const itemProps = useCallback(
     (value: T, label?: string) => ({
       value,
-      ...(value === selected ? { checked: true } : {}),
-      children: label || value,
+      ...(value === selected ? { [booleanProperty]: true } : {}),
+      ...(labelChildren ? { children: label || value } : {}),
     }),
-    [selected]
+    [booleanProperty, labelChildren, selected]
   );
 
   return { selected, handleSelectionChange, itemProps };

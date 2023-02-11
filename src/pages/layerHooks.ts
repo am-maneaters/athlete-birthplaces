@@ -3,12 +3,7 @@ import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 
 import { useEffect } from 'react';
 import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
-import {
-  PointGraphic,
-  Team,
-  athleteSchema,
-  graphicSchema,
-} from './AthleteTypes';
+
 import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import { useQuery } from '@tanstack/react-query';
@@ -16,13 +11,17 @@ import { replaceFeatures } from './layerUtils';
 import FeatureFilter from '@arcgis/core/layers/support/FeatureFilter';
 import Graphic from '@arcgis/core/Graphic';
 import Polyline from '@arcgis/core/geometry/Polyline';
+import Point from '@arcgis/core/geometry/Point';
 import * as geodesicUtils from '@arcgis/core/geometry/support/geodesicUtils';
 import { array } from 'yup';
-
 import {
   useFeatureLayer,
   useFeatureLayerView,
-} from '../hooks/useGraphicsLayer';
+} from '../arcgisUtils/useGraphicsLayer';
+import { Team, teamSchema } from '../schemas/teamSchema';
+import { athleteSchema } from '../schemas/athleteSchema';
+import { graphicSchema } from '../schemas/graphicSchema';
+import { PointGraphic } from './AthleteTypes';
 
 const nhlPlayersLayerUrl =
   'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_API_Athletes/FeatureServer/0';
@@ -93,7 +92,7 @@ export function useAthletesLayer(
     });
   }, [athletesLayer, selectedTeam]);
 
-  const { data: athleteFeatures } = useQuery(
+  const athleteQuery = useQuery(
     ['relatedPlayers', selectedTeam, selectedSport],
     async ({ signal }) => {
       const features = await athletesLayer.queryFeatures(
@@ -118,13 +117,13 @@ export function useAthletesLayer(
   );
 
   useEffect(() => {
-    if (!selectedTeam || !athleteFeatures) return;
+    if (!selectedTeam || !athleteQuery.data) return;
 
     const teamPoint = [
       selectedTeam.geometry.longitude,
       selectedTeam.geometry.latitude,
     ];
-    const newGraphics = athleteFeatures.map(({ geometry, attributes }) => {
+    const newGraphics = athleteQuery.data.map(({ geometry, attributes }) => {
       const polyline = new Polyline({
         paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
       });
@@ -138,9 +137,19 @@ export function useAthletesLayer(
     });
 
     replaceFeatures(playerLineLayer, newGraphics);
-  }, [athleteFeatures, playerLineLayer, selectedTeam]);
 
-  return { athletesLayer, athleteFeatures };
+    // const lineColor = new Color(selectedTeam.attributes.color);
+
+    // lineColor.a = 0.25;
+    // playerLineLayer.renderer = new SimpleRenderer({
+    //   symbol: new SimpleLineSymbol({
+    //     color: lineColor,
+    //     width: 2,
+    //   }),
+    // });
+  }, [athleteQuery.data, playerLineLayer, selectedTeam]);
+
+  return { athletesLayer, athleteQuery };
 }
 
 const nhlTeamsLayerUrl =
@@ -228,7 +237,7 @@ export function useTeamsLayer(
         },
         { signal }
       );
-      return features.features as PointGraphic<Team>[];
+      return array().of(graphicSchema(teamSchema)).validate(features.features);
     }
   );
 
@@ -248,7 +257,18 @@ export function useTeamsLayer(
       })),
     });
 
-    replaceFeatures(teamsLayer, teamFeatures);
+    const newFeatures = teamFeatures.map(
+      ({ geometry, attributes }) =>
+        new Graphic({
+          geometry: new Point({
+            longitude: geometry.longitude,
+            latitude: geometry.latitude,
+          }),
+          attributes: { ...attributes },
+        })
+    );
+
+    replaceFeatures(teamsLayer, newFeatures);
   }, [baseTeamLayer.fields, teamFeatures, teamsLayer]);
 
   return { teamsLayer, teamFeatures };

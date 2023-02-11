@@ -1,10 +1,9 @@
-import MapViewComponent from '../components/MapViewComponent';
-import { ArcUI } from '../components/ArcUI';
+import MapViewComponent from '../arcgisUtils/MapViewComponent';
+import { ArcUI } from '../arcgisUtils/ArcUI';
 
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 
 import {
-  CalciteList,
   CalcitePanel,
   CalciteSegmentedControl,
   CalciteSegmentedControlItem,
@@ -19,8 +18,9 @@ import { isGraphicsHit } from '../utils/esriUtils';
 import Basemap from '@arcgis/core/Basemap';
 import { useAthletesLayer, useTeamsLayer } from './layerHooks';
 import { useSegmentedControl } from './calciteHooks';
-import { AthleteListItem, Sport } from './AthleteListItem';
-import { useOnEvent } from '../hooks';
+import { Sport } from '../components/AthleteListItem';
+import { useOnEvent } from '../arcgisUtils';
+import { TeamPanel } from '../components/TeamPanel';
 
 export function NhlPlayersDemo() {
   const [mapView, setMapView] = useState<MapView>();
@@ -49,7 +49,7 @@ export function NhlPlayersDemo() {
     return feat;
   }, [selectedTeamId, teamFeatures]);
 
-  const { athleteFeatures } = useAthletesLayer(
+  const { athleteQuery } = useAthletesLayer(
     mapView,
     selectedTeam,
     selectedSport
@@ -113,21 +113,18 @@ export function NhlPlayersDemo() {
               </CalciteSegmentedControl>
             </CalcitePanel>
           </ArcUI>
+
+          <ArcUI position="top-right">
+            {selectedTeam && athleteQuery.data && (
+              <TeamPanel
+                team={selectedTeam?.attributes}
+                athletes={athleteQuery.data}
+                onAthleteClick={(athlete) => {}}
+                loading={athleteQuery.isLoading}
+              />
+            )}
+          </ArcUI>
         </MapViewComponent>
-        <CalciteShellPanel slot="panel-end" widthScale="m">
-          <CalcitePanel heading={selectedTeam?.attributes.displayName}>
-            <CalciteList>
-              {athleteFeatures?.map(({ attributes }) => (
-                <AthleteListItem
-                  key={attributes.id}
-                  athlete={attributes}
-                  teamLogoUrl={selectedTeam?.attributes.logo}
-                  onClick={() => setSelectedPlayerId(attributes.id.toString())}
-                />
-              ))}
-            </CalciteList>
-          </CalcitePanel>
-        </CalciteShellPanel>
       </CalciteShell>
     </div>
   );

@@ -1,13 +1,14 @@
 // boilerplate function component with props
 
 import React from 'react';
-import { Athlete } from './AthleteTypes';
 import { CalciteListItem } from '@esri/calcite-components-react';
+import { Athlete } from '../schemas/athleteSchema';
 
 export interface AthleteListItemProps {
   athlete: Athlete;
   teamLogoUrl?: string;
   onClick?: (e: React.MouseEvent<HTMLCalciteListItemElement>) => void;
+  mode: 'card' | 'list';
 }
 
 export enum Sport {
@@ -34,35 +35,37 @@ export const AthleteListItem = ({
   athlete: { id, fullName, birthPlace, type },
   onClick,
   teamLogoUrl,
-}: AthleteListItemProps) => (
-  <CalciteListItem label={fullName} description={birthPlace} onClick={onClick}>
-    <div
-      slot="content-start"
-      style={{
-        height: 100,
-        width: 150,
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+  mode = 'card',
+}: AthleteListItemProps) =>
+  mode === 'card' ? (
+    <CalciteListItem
+      label={fullName}
+      description={birthPlace}
+      onClick={onClick}
     >
-      <img
-        src={teamLogoUrl}
-        alt="Team Logo"
-        height="100px"
-        style={{
-          marginLeft: 25,
-          transform: 'scale(1.5)',
-          opacity: 0.2,
-        }}
-      />
-      <img
-        src={getAthleteHeadshot(id, type as Sport, 100, 140)}
-        alt="Athlete Headshot"
-        height="100px"
-        width="140px"
-        // overlay the team logo
-        style={{ position: 'absolute', left: 0 }}
-      />
-    </div>
-  </CalciteListItem>
-);
+      <div
+        slot="content-start"
+        className="relative overflow-y-clip w-[140px] h-[100px]"
+      >
+        <img
+          src={teamLogoUrl}
+          alt="Team Logo"
+          height="100px"
+          className="opacity-20 scale-125 ml-2"
+        />
+        <img
+          src={getAthleteHeadshot(id, type as Sport, 100, 140)}
+          alt="Athlete Headshot"
+          height="100px"
+          width="140px"
+          className="absolute inset-0"
+        />
+      </div>
+    </CalciteListItem>
+  ) : (
+    <CalciteListItem
+      label={fullName}
+      description={birthPlace}
+      onClick={onClick}
+    />
+  );
