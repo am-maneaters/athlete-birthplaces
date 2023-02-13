@@ -1,7 +1,7 @@
 // boilerplate function component with props
 
 import React from 'react';
-import { CalciteListItem } from '@esri/calcite-components-react';
+import { CalciteIcon, CalciteListItem } from '@esri/calcite-components-react';
 import { Athlete } from '../schemas/athleteSchema';
 
 export interface AthleteListItemProps {
@@ -32,12 +32,13 @@ const getAthleteHeadshot = (
   `https://a.espncdn.com/combiner/i?img=/i/headshots/${leagueLookup[sport]}/players/full/${athleteId}.png&h=${height}&w=${width}&scale=crop`;
 
 export const AthleteListItem = ({
-  athlete: { id, fullName, birthPlace, type },
+  athlete: { id, fullName, birthPlace, type, jersey },
   onClick,
   teamLogoUrl,
   mode = 'card',
-}: AthleteListItemProps) =>
-  mode === 'card' ? (
+}: AthleteListItemProps) => {
+  const [showImage, setShowImage] = React.useState(true);
+  return mode === 'card' ? (
     <CalciteListItem
       label={fullName}
       description={birthPlace}
@@ -53,13 +54,33 @@ export const AthleteListItem = ({
           height="100px"
           className="opacity-20 scale-125 ml-2"
         />
-        <img
-          src={getAthleteHeadshot(id, type as Sport, 100, 140)}
-          alt="Athlete Headshot"
-          height="100px"
-          width="140px"
-          className="absolute inset-0"
-        />
+        {showImage && (
+          <img
+            src={getAthleteHeadshot(id, type as Sport, 100, 140)}
+            alt="Athlete Headshot"
+            height="100px"
+            width="140px"
+            className="absolute inset-0"
+            onLoad={(e) => {
+              setShowImage(true);
+            }}
+            onError={(e) => {
+              setShowImage(false);
+            }}
+          />
+        )}
+      </div>
+      <div slot="content">
+        <div className="flex items-center text-1">{fullName}</div>
+        <div className="flex items-center text-n3">
+          <span>{birthPlace}</span>
+        </div>
+      </div>
+
+      <div slot="content-end" className="flex flex-col mr-2">
+        <div className="flex items-center text-n1">
+          <span className="ml-1">#{jersey}</span>
+        </div>
       </div>
     </CalciteListItem>
   ) : (
@@ -69,3 +90,4 @@ export const AthleteListItem = ({
       onClick={onClick}
     />
   );
+};

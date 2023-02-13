@@ -9,7 +9,7 @@ import {
 import { AthleteListItem } from './AthleteListItem';
 import { Team } from '../schemas/teamSchema';
 import { Athlete } from '../schemas/athleteSchema';
-import { PointGraphic } from '../pages/AthleteTypes';
+import { PointGraphic } from '../typings/AthleteTypes';
 import { useState } from 'react';
 
 type TeamPanelProps = {
@@ -21,17 +21,25 @@ type TeamPanelProps = {
 
 type SortField = {
   field: keyof Athlete;
+  altField?: keyof Athlete;
   label: string;
+  transform?: (val: string | number | boolean) => string | number;
   group?: boolean;
 };
 
 const sortingFields: SortField[] = [
+  {
+    field: 'birthState',
+    altField: 'birthCountry',
+    label: 'Birthplace',
+    group: true,
+  },
   { field: 'fullName', label: 'Name' },
   { field: 'weight', label: 'Weight' },
   { field: 'height', label: 'Height' },
   { field: 'age', label: 'Age' },
   { field: 'positionName', label: 'Position', group: true },
-  { field: 'birthCountry', label: 'Birthplace', group: true },
+  { field: 'jersey', label: 'Jersey', transform: Number },
 ];
 
 export function TeamPanel({
@@ -44,22 +52,34 @@ export function TeamPanel({
 
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
-  const sortedAthletes = athletes?.sort((a, b) => {
-    const aVal = a.attributes[sort.field];
-    const bVal = b.attributes[sort.field];
-    if (!aVal || !bVal) return 0;
-    if (aVal < bVal) {
-      return -1;
+  const getSortField = (athlete: Athlete) =>
+    athlete[sort.field] ? sort.field : sort.altField ?? sort.field;
+
+  const sortedAthletes = athletes?.sort(
+    ({ attributes: a }, { attributes: b }) => {
+      const field = getSortField(a);
+      const transform = sort.transform ?? ((val: string) => val);
+      const aVal = a[field];
+      const bVal = b[field];
+      if (!aVal || !bVal) return 0;
+      const aTransformed = transform(aVal);
+      const bTransformed = transform(bVal);
+
+      if (aTransformed < bTransformed) {
+        return -1;
+      }
+      if (aTransformed > bTransformed) {
+        return 1;
+      }
+      return 0;
     }
-    if (aVal > bVal) {
-      return 1;
-    }
-    return 0;
-  });
+  );
 
   const groupedAthletes = sort.group
     ? sortedAthletes?.reduce((acc, athlete) => {
-        const position = athlete.attributes[sort.field];
+        const field = getSortField(athlete.attributes);
+
+        const position = athlete.attributes[field];
         if (!position) return acc;
         const key = position.toString();
         if (acc[key]) {
@@ -74,10 +94,10 @@ export function TeamPanel({
     <div className="flex flex-col min-h-0 bg-foreground-2">
       <div className="flex h-32" style={{ backgroundColor: team.color }}>
         <div className="py-2 px-4">
-          <h1 className="text-5 text-white uppercase italic">
+          <h1 className="text-5 text-color-1 uppercase italic">
             {team.location}
           </h1>
-          <h1 className="text-4 text-white uppercase italic">{team.name}</h1>
+          <h1 className="text-4 text-color-1 uppercase italic">{team.name}</h1>
         </div>
         <div className="w-[175px] flex justify-center items-center overflow-y-clip">
           <img

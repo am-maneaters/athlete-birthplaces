@@ -8,7 +8,6 @@ import {
   CalciteSegmentedControl,
   CalciteSegmentedControlItem,
   CalciteShell,
-  CalciteShellPanel,
 } from '@esri/calcite-components-react';
 
 import { useMemo, useState } from 'react';
@@ -16,11 +15,12 @@ import MapView from '@arcgis/core/views/MapView';
 import { isGraphicsHit } from '../utils/esriUtils';
 
 import Basemap from '@arcgis/core/Basemap';
-import { useAthletesLayer, useTeamsLayer } from './layerHooks';
 import { useSegmentedControl } from './calciteHooks';
 import { Sport } from '../components/AthleteListItem';
 import { useOnEvent } from '../arcgisUtils';
 import { TeamPanel } from '../components/TeamPanel';
+import { useTeamsLayer } from '../hooks/teamLayerHooks';
+import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 
 export function NhlPlayersDemo() {
   const [mapView, setMapView] = useState<MapView>();
