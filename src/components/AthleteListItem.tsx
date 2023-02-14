@@ -1,8 +1,12 @@
 // boilerplate function component with props
 
 import React from 'react';
-import { CalciteIcon, CalciteListItem } from '@esri/calcite-components-react';
+import {
+  CalciteListItem,
+  CalciteDatePicker,
+} from '@esri/calcite-components-react';
 import { Athlete } from '../schemas/athleteSchema';
+import { Sport, getAthleteHeadshotUrl } from '../utils/imageUtils';
 
 export interface AthleteListItemProps {
   athlete: Athlete;
@@ -11,33 +15,24 @@ export interface AthleteListItemProps {
   mode: 'card' | 'list';
 }
 
-export enum Sport {
-  Hockey = 'hockey',
-  Football = 'football',
-  Basketball = 'basketball',
-  Baseball = 'baseball',
-}
-const leagueLookup = {
-  [Sport.Hockey]: 'nhl',
-  [Sport.Football]: 'nfl',
-  [Sport.Basketball]: 'nba',
-  [Sport.Baseball]: 'mlb',
-};
-const getAthleteHeadshot = (
-  athleteId: number,
-  sport: Sport,
-  height: number,
-  width: number
-) =>
-  `https://a.espncdn.com/combiner/i?img=/i/headshots/${leagueLookup[sport]}/players/full/${athleteId}.png&h=${height}&w=${width}&scale=crop`;
-
 export const AthleteListItem = ({
-  athlete: { id, fullName, birthPlace, type, jersey },
+  athlete: {
+    id,
+    fullName,
+    birthPlace,
+    type,
+    jersey,
+    positionName,
+    displayHeight,
+    displayWeight,
+    dateOfBirth,
+  },
   onClick,
   teamLogoUrl,
   mode = 'card',
 }: AthleteListItemProps) => {
   const [showImage, setShowImage] = React.useState(true);
+
   return mode === 'card' ? (
     <CalciteListItem
       label={fullName}
@@ -56,10 +51,11 @@ export const AthleteListItem = ({
         />
         {showImage && (
           <img
-            src={getAthleteHeadshot(id, type as Sport, 100, 140)}
+            src={getAthleteHeadshotUrl(id, type as Sport, { h: 100, w: 140 })}
             alt="Athlete Headshot"
             height="100px"
             width="140px"
+            loading="lazy"
             className="absolute inset-0"
             onLoad={(e) => {
               setShowImage(true);
@@ -69,6 +65,7 @@ export const AthleteListItem = ({
             }}
           />
         )}
+        <span className="absolute top-0 opacity-50">#{jersey}</span>
       </div>
       <div slot="content">
         <div className="flex items-center text-1">{fullName}</div>
@@ -77,10 +74,14 @@ export const AthleteListItem = ({
         </div>
       </div>
 
-      <div slot="content-end" className="flex flex-col mr-2">
-        <div className="flex items-center text-n1">
-          <span className="ml-1">#{jersey}</span>
-        </div>
+      <div slot="content-end" className="flex flex-col mr-2 text-n3 items-end">
+        <span>{displayHeight}</span>
+        <span>{displayWeight}</span>
+        {dateOfBirth !== null && (
+          <span>
+            {new Date(Number(dateOfBirth)).toLocaleDateString('en-US')}
+          </span>
+        )}
       </div>
     </CalciteListItem>
   ) : (

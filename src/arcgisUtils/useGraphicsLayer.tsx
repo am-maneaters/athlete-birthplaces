@@ -45,7 +45,8 @@ export function useGraphicsLayer(
 
 export function useFeatureLayer(
   mapView: MapView | undefined,
-  layerParams: ConstructorParameters<typeof FeatureLayer>[0]
+  layerParams: ConstructorParameters<typeof FeatureLayer>[0],
+  layerIndex = 0
 ): FeatureLayer {
   const id = useId();
 
@@ -58,12 +59,12 @@ export function useFeatureLayer(
     if (prevLayer) {
       mapView.map.remove(prevLayer);
     }
-    mapView.map.add(currentLayer);
+    mapView.map.add(currentLayer, layerIndex);
 
     return () => {
       mapView.map.remove(currentLayer);
     };
-  }, [id, layer, mapView]);
+  }, [id, layer, layerIndex, mapView]);
 
   return layer.current;
 }

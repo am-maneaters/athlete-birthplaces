@@ -1,5 +1,5 @@
-import MapViewComponent from '../arcgisUtils/MapViewComponent';
-import { ArcUI } from '../arcgisUtils/ArcUI';
+import MapViewComponent from './arcgisUtils/MapViewComponent';
+import { ArcUI } from './arcgisUtils/ArcUI';
 
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 
@@ -12,17 +12,18 @@ import {
 
 import { useMemo, useState } from 'react';
 import MapView from '@arcgis/core/views/MapView';
-import { isGraphicsHit } from '../utils/esriUtils';
+import { isGraphicsHit } from './utils/esriUtils';
 
 import Basemap from '@arcgis/core/Basemap';
-import { useSegmentedControl } from './calciteHooks';
-import { Sport } from '../components/AthleteListItem';
-import { useOnEvent } from '../arcgisUtils';
-import { TeamPanel } from '../components/TeamPanel';
-import { useTeamsLayer } from '../hooks/teamLayerHooks';
-import { useAthletesLayer } from '../hooks/athleteLayerHooks';
+import { useSegmentedControl } from './hooks/calciteHooks';
+import { useOnEvent } from './arcgisUtils';
+import { TeamPanel } from './components/TeamPanel';
+import { useTeamsLayer } from './hooks/teamLayerHooks';
+import { useAthletesLayer } from './hooks/athleteLayerHooks';
+import { useFeatureLayerView } from './arcgisUtils/useGraphicsLayer';
+import { Sport } from './utils/imageUtils';
 
-export function NhlPlayersDemo() {
+export function App() {
   const [mapView, setMapView] = useState<MapView>();
 
   const [selectedTeamId, setSelectedTeamId] = useState<string>();
@@ -49,11 +50,25 @@ export function NhlPlayersDemo() {
     return feat;
   }, [selectedTeamId, teamFeatures]);
 
-  const { athleteQuery } = useAthletesLayer(
+  const { athleteQuery, athletesLayer } = useAthletesLayer(
     mapView,
     selectedTeam,
     selectedSport
   );
+
+  const athleteLayerView = useFeatureLayerView(mapView, athletesLayer);
+
+  useOnEvent(mapView, 'click', async (e) => {
+    // const mapHit = await mapView?.hitTest(e, {
+    //   include: [athletesLayer],
+    // });
+    // if (!mapHit || mapHit.results.length === 0) return;
+    // const [firstHit] = mapHit.results;
+    // if (isGraphicsHit(firstHit)) {
+    //   athleteLayerView?.highlight(firstHit.graphic.attributes.ObjectID);
+    // }
+    // console.log(mapHit);
+  });
 
   useOnEvent(mapView, 'click', async (e) => {
     const mapHit = await mapView?.hitTest(e, {
@@ -93,6 +108,12 @@ export function NhlPlayersDemo() {
             ui: { components: [] },
             center: [-98, 38.88],
             zoom: 4,
+
+            constraints: {
+              minZoom: 2,
+              maxZoom: 10,
+              rotationEnabled: false,
+            },
           }}
           onMapViewLoad={(loadedView) => {
             setMapView(loadedView);
@@ -115,14 +136,23 @@ export function NhlPlayersDemo() {
           </ArcUI>
 
           <ArcUI position="top-right">
-            {selectedTeam && athleteQuery.data && (
-              <TeamPanel
-                team={selectedTeam?.attributes}
-                athletes={athleteQuery.data}
-                onAthleteClick={(athlete) => {}}
-                loading={athleteQuery.isLoading}
-              />
-            )}
+            <TeamPanel
+              team={selectedTeam?.attributes}
+              teams={teamFeatures?.map((f) => f.attributes)}
+              athletes={athleteQuery.data}
+              onAthleteClick={(athlete) => {
+                setSelectedPlayerId(athlete.attributes.id.toString());
+                mapView?.goTo({
+                  target: athlete.geometry,
+                  zoom: 10,
+                });
+              }}
+              loading={athleteQuery.isLoading}
+              sport={selectedSport}
+              onTeamChange={(team) => {
+                setSelectedTeamId(team?.id.toString());
+              }}
+            />
           </ArcUI>
         </MapViewComponent>
       </CalciteShell>

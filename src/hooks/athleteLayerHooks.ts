@@ -9,7 +9,6 @@ import { replaceFeatures } from '../utils/layerUtils';
 import FeatureFilter from '@arcgis/core/layers/support/FeatureFilter';
 import Graphic from '@arcgis/core/Graphic';
 import Polyline from '@arcgis/core/geometry/Polyline';
-import * as geodesicUtils from '@arcgis/core/geometry/support/geodesicUtils';
 import { array } from 'yup';
 import {
   useFeatureLayer,
@@ -19,6 +18,10 @@ import { Team } from '../schemas/teamSchema';
 import { athleteSchema } from '../schemas/athleteSchema';
 import { graphicSchema } from '../schemas/graphicSchema';
 import { PointGraphic } from '../typings/AthleteTypes';
+
+import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+import Color from '@arcgis/core/Color';
+import { getLuminance } from '../utils/colorUtils';
 
 const nhlPlayersLayerUrl =
   'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_API_Athletes/FeatureServer/0';
@@ -32,7 +35,42 @@ export function useAthletesLayer(
     url: nhlPlayersLayerUrl,
     title: 'NHL Players',
     outFields: ['*'],
+    labelingInfo: [
+      {
+        labelExpressionInfo: {
+          expression: '$feature.birthCity',
+        },
+        symbol: {
+          type: 'text',
+          color: '#fff',
+          haloColor: 'black',
+          haloSize: '1px',
+          font: {
+            size: 8,
+            family: 'Noto Sans',
+            weight: 'bold',
+          },
+        },
+        maxScale: 0,
+        minScale: 1_500_000,
+        labelPlacement: 'above-center',
+      },
+    ],
+    effect: 'bloom(2.7, 0.5px, 2%)',
   });
+
+  useEffect(() => {
+    athletesLayer.renderer = new SimpleRenderer({
+      symbol: new SimpleMarkerSymbol({
+        color: [255, 255, 255, 1],
+        size: 3,
+        outline: {
+          color: [255, 255, 255, 0.1],
+          width: 1,
+        },
+      }),
+    });
+  }, [athletesLayer]);
 
   const athletesView = useFeatureLayerView(mapView, athletesLayer);
 
@@ -52,14 +90,11 @@ export function useAthletesLayer(
     renderer: new SimpleRenderer({
       symbol: new SimpleLineSymbol({
         color: [255, 0, 0, 0.25],
-        width: 2,
+        width: 1,
       }),
     }),
+    effect: 'bloom(1.7, 0.5px, 2%)',
   });
-
-  const { data } = useQuery(['playerLineLayer', playerLineLayer], () =>
-    playerLineLayer.queryFeatures().then((res) => res.features)
-  );
 
   useEffect(() => {
     if (!mapView || !athletesView) return;
@@ -73,9 +108,7 @@ export function useAthletesLayer(
 
   useEffect(() => {
     if (!selectedTeam) {
-      athletesLayer.featureEffect = new FeatureEffect({
-        filter: { where: '1=0' },
-      });
+      athletesLayer.featureEffect = undefined;
       return;
     }
 
@@ -94,7 +127,8 @@ export function useAthletesLayer(
     async ({ signal }) => {
       const features = await athletesLayer.queryFeatures(
         {
-          where: `teamId = ${selectedTeam?.attributes.id} AND type = '${selectedSport}'`,
+          where: `type = '${selectedSport}' AND teamId = ${selectedTeam?.attributes.id}`,
+
           outFields: ['*'],
           returnGeometry: true,
         },
@@ -106,7 +140,6 @@ export function useAthletesLayer(
         .validate(features.features);
     },
     {
-      enabled: !!selectedTeam?.attributes.id,
       onError: (err) => {
         console.log(err);
       },
@@ -114,36 +147,57 @@ export function useAthletesLayer(
   );
 
   useEffect(() => {
-    if (!selectedTeam || !athleteQuery.data) return;
+    let isUpdating = false;
 
-    const teamPoint = [
-      selectedTeam.geometry.longitude,
-      selectedTeam.geometry.latitude,
-    ];
-    const newGraphics = athleteQuery.data.map(({ geometry, attributes }) => {
-      const polyline = new Polyline({
-        paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
+    async function updateLines() {
+      if (isUpdating) return;
+      isUpdating = true;
+
+      await replaceFeatures(playerLineLayer, []);
+
+      if (!athleteQuery.data || !selectedTeam) return;
+
+      const primaryColor = new Color(selectedTeam.attributes.color);
+      const secondaryColor = new Color(selectedTeam.attributes.alternateColor);
+
+      const lineColor =
+        getLuminance(primaryColor) > getLuminance(secondaryColor)
+          ? primaryColor
+          : secondaryColor;
+
+      lineColor.a = 0.25;
+      playerLineLayer.renderer = new SimpleRenderer({
+        symbol: new SimpleLineSymbol({
+          color: lineColor,
+          width: 2,
+        }),
       });
-      return new Graphic({
-        geometry: geodesicUtils.geodesicDensify(
-          polyline,
-          Number.POSITIVE_INFINITY
-        ),
-        attributes: { ...attributes },
+
+      const teamPoint = [
+        selectedTeam.geometry.longitude,
+        selectedTeam.geometry.latitude,
+      ];
+      const newGraphics = athleteQuery.data.map(({ geometry, attributes }) => {
+        const polyline = new Polyline({
+          paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
+        });
+
+        return new Graphic({
+          geometry: polyline,
+
+          attributes: { ...attributes },
+        });
       });
-    });
 
-    replaceFeatures(playerLineLayer, newGraphics);
+      await replaceFeatures(playerLineLayer, newGraphics);
 
-    // const lineColor = new Color(selectedTeam.attributes.color);
+      isUpdating = false;
+    }
+    updateLines();
 
-    // lineColor.a = 0.25;
-    // playerLineLayer.renderer = new SimpleRenderer({
-    //   symbol: new SimpleLineSymbol({
-    //     color: lineColor,
-    //     width: 2,
-    //   }),
-    // });
+    return () => {
+      isUpdating = true;
+    };
   }, [athleteQuery.data, playerLineLayer, selectedTeam]);
 
   return { athletesLayer, athleteQuery };

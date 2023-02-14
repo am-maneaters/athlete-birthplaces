@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import Map from '@arcgis/core/WebMap';
+import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 
 export const MapContext = createContext<MapView | undefined>(new MapView());
 
@@ -17,11 +18,7 @@ type MapViewComponentProps = {
   onMapViewLoad?: (map: MapView) => void;
 } & HTMLAttributes<HTMLDivElement>;
 
-export const ArcFeatureLayer = ({
-  children,
-}: {
-  children: React.ReactElement;
-}) => <div>{children}</div>;
+export const ArcFeatureLayer = ({ layer }: { layer: FeatureLayer }) => {};
 
 export const ArcViewLayer = ({
   children,
@@ -36,15 +33,6 @@ export default function MapViewComponent({
   onMapViewLoad,
   ...divAttributes
 }: MapViewComponentProps) {
-  for (const child of React.Children.toArray(children)) {
-    // check if child is a react element
-    if (
-      React.isValidElement(child) && // check if child is a widget
-      child.type === ArcViewLayer
-    ) {
-      console.log('child', child.props.children);
-    }
-  }
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map>(new Map(mapProps));
 

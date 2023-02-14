@@ -29,4 +29,5 @@ export const teamSchema = object().shape({
   venueAddress: string().required(),
 });
 
-export type Team = InferType<typeof teamSchema>;
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface Team extends InferType<typeof teamSchema> {}

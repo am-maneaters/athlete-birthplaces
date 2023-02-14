@@ -6,7 +6,7 @@ import './calcite-imports';
 import './index.css';
 
 import { MapStateProvider } from './arcgisUtils/MapStateContext';
-import { NhlPlayersDemo } from './pages/NhlPlayersDemo';
+import { App } from './App';
 
 import { setAssetPath } from '@esri/calcite-components/dist/components';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -24,7 +24,7 @@ root.render(
   <StrictMode>
     <MapStateProvider>
       <QueryClientProvider client={queryClient}>
-        <NhlPlayersDemo />
+        <App />
       </QueryClientProvider>
     </MapStateProvider>
   </StrictMode>

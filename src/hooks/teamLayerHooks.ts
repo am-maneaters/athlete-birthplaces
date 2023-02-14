@@ -13,8 +13,9 @@ import {
   useFeatureLayer,
   useFeatureLayerView,
 } from '../arcgisUtils/useGraphicsLayer';
-import { teamSchema } from '../schemas/teamSchema';
+import { Team, teamSchema } from '../schemas/teamSchema';
 import { graphicSchema } from '../schemas/graphicSchema';
+import { PointGraphic } from '../typings/AthleteTypes';
 
 const nhlTeamsLayerUrl =
   'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_Big_Four_Teams/FeatureServer/0';
@@ -38,6 +39,7 @@ export function useTeamsLayer(
     geometryType: 'point',
     spatialReference: { wkid: 4326 },
     outFields: ['*'],
+
     fields: [
       {
         name: 'ObjectId',
@@ -77,7 +79,8 @@ export function useTeamsLayer(
   //   Apply feature effect to the teams layer
   useEffect(() => {
     if (!mapView || !selectedTeamId) {
-      teamsLayer.featureEffect = new FeatureEffect();
+      // Clear the feature effect
+      teamsLayer.featureEffect = undefined;
       return;
     }
 
@@ -86,6 +89,7 @@ export function useTeamsLayer(
       filter: {
         where: `id = '${selectedTeamId}'`,
       },
+      excludedLabelsVisible: false,
     });
   }, [teamsLayer, mapView, selectedTeamId]);
 
@@ -101,7 +105,9 @@ export function useTeamsLayer(
         },
         { signal }
       );
-      return array().of(graphicSchema(teamSchema)).validate(features.features);
+      return array()
+        .of(graphicSchema(teamSchema))
+        .validate(features.features) as Promise<PointGraphic<Team>[]>;
     }
   );
 
