@@ -7,9 +7,6 @@ import {
   CalciteDropdownItem,
   CalciteListItem,
   CalciteDropdownGroup,
-  CalciteFlow,
-  CalciteFlowItem,
-  CalciteBlock,
 } from '@esri/calcite-components-react';
 import { AthleteListItem } from './AthleteListItem';
 import { Team } from '../schemas/teamSchema';
@@ -17,6 +14,8 @@ import { Athlete } from '../schemas/athleteSchema';
 import { PointGraphic } from '../typings/AthleteTypes';
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Sport, getLeagueLogoUrl } from '../utils/imageUtils';
+import { TeamListItem } from './TeamListItem';
+import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 
 type SortField = {
   field: keyof Athlete;
@@ -42,24 +41,31 @@ const sortingFields: SortField[] = [
 ];
 
 type TeamPanelProps = {
-  team: Team | undefined;
-  athletes: PointGraphic<Athlete>[] | undefined;
+  mapView: __esri.MapView;
+  teamId: string | undefined;
   onAthleteClick: (athlete: PointGraphic<Athlete>) => void;
-  loading?: boolean;
-  teams: Team[] | undefined;
+  teams: PointGraphic<Team>[];
   sport: Sport;
   onTeamChange: (team: Team | undefined) => void;
 };
 
 export function TeamPanel({
-  team,
-  athletes,
+  teamId,
+  mapView,
   onAthleteClick,
-  loading,
   teams,
   sport,
   onTeamChange,
 }: TeamPanelProps) {
+  const team = useMemo(() => {
+    const feat = teams?.find((f) => f.attributes.id.toString() === teamId);
+
+    return feat;
+  }, [teams, teamId]);
+
+  const { athleteQuery } = useAthletesLayer(mapView, team, sport);
+  const { data: athletes, isFetching: loading } = athleteQuery;
+
   const [sort, setSort] = useState(sortingFields[0]);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -117,46 +123,46 @@ export function TeamPanel({
   const teamsById = useMemo(
     () =>
       teams?.reduce(
-        (acc, team) => ({ ...acc, [team.id]: team }),
+        (acc, team) => ({ ...acc, [team.attributes.id]: team.attributes }),
         {} as Record<string, Team>
       ),
     [teams]
   );
-
   return (
-    <div className="flex flex-col min-h-0 bg-foreground-2 w-[400px]">
+    <div className="flex flex-col h-full bg-foreground-2 w-[400px]">
       <div
-        className="flex h-28"
-        style={{ backgroundColor: team?.color ?? 'black' }}
+        className="flex justify-stretch overflow-hidden"
+        style={{ backgroundColor: team?.attributes.color ?? 'black' }}
       >
-        {team?.id && (
+        {team?.attributes.id && (
           <CalciteAction
             text="Back"
             icon="chevron-left"
             scale="s"
             style={{
               '--calcite-ui-text-3': 'white',
+              justifySelf: 'flex-start',
             }}
             appearance="transparent"
             onClick={() => onTeamChange(undefined)}
           />
         )}
-        <div className="py-2 px-4">
+        <div className="py-2 px-4 flex-1">
           <h1 className="text-4 text-color-1 uppercase italic whitespace-nowrap">
-            {team?.location ?? 'All'}
+            {team?.attributes.location ?? teams[0].attributes.league}
           </h1>
-          <h1 className="text-3 text-color-1 uppercase italic ">
-            {team?.name ?? 'Teams'}
+          <h1 className="text-3 text-color-1 uppercase italic whitespace-nowrap">
+            {team?.attributes.name ?? 'Teams'}
           </h1>
         </div>
-        <div className="w-[175px] flex justify-center items-center overflow-y-clip">
-          <img
-            height={100}
-            className="scale-150 opacity-30"
-            src={team?.logo ?? getLeagueLogoUrl(sport, { w: 100, h: 100 })}
-            alt="Team Logo"
-          />
-        </div>
+        <img
+          className="scale-150 opacity-30 flex-1 w-[100px] h-[100px] object-cover"
+          src={
+            team?.attributes?.logo ??
+            getLeagueLogoUrl(sport, { w: 500, h: 500 })
+          }
+          alt="Team Logo"
+        />
       </div>
 
       <div className="px-2 py-1 flex items-center justify-between">
@@ -201,18 +207,14 @@ export function TeamPanel({
           <CalciteDropdownGroup groupTitle="Sort Direction">
             <CalciteDropdownItem
               label="Ascending"
-              onCalciteDropdownItemSelect={() => {
-                setSortDirection('asc');
-              }}
+              onCalciteDropdownItemSelect={() => setSortDirection('asc')}
               selected={sortDirection === 'asc' ? true : undefined}
             >
               Ascending
             </CalciteDropdownItem>
             <CalciteDropdownItem
               label="Descending"
-              onCalciteDropdownItemSelect={() => {
-                setSortDirection('desc');
-              }}
+              onCalciteDropdownItemSelect={() => setSortDirection('desc')}
               selected={sortDirection === 'desc' ? true : undefined}
             >
               Descending
@@ -222,7 +224,10 @@ export function TeamPanel({
       </div>
 
       <div className="overflow-auto flex-1">
-        <CalciteList loading={loading ? true : undefined}>
+        <CalciteList
+          className="min-h-[100px]"
+          loading={loading ? true : undefined}
+        >
           {groupedAthletes &&
             Object.entries(groupedAthletes).map(([groupLabel, athletes]) => (
               <Fragment key={groupLabel}>
@@ -255,6 +260,15 @@ export function TeamPanel({
                 athlete={athlete.attributes}
                 teamLogoUrl={teamsById?.[athlete.attributes.teamId]?.logo}
                 onClick={() => onAthleteClick(athlete)}
+              />
+            ))}
+
+          {!sortedAthletes &&
+            teams?.map((team) => (
+              <TeamListItem
+                key={team.attributes.id}
+                team={team.attributes}
+                onClick={onTeamChange}
               />
             ))}
         </CalciteList>

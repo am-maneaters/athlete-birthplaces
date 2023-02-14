@@ -1,16 +1,14 @@
 import MapViewComponent from './arcgisUtils/MapViewComponent';
-import { ArcUI } from './arcgisUtils/ArcUI';
 
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 
 import {
-  CalcitePanel,
   CalciteSegmentedControl,
   CalciteSegmentedControlItem,
   CalciteShell,
 } from '@esri/calcite-components-react';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import MapView from '@arcgis/core/views/MapView';
 import { isGraphicsHit } from './utils/esriUtils';
 
@@ -19,8 +17,6 @@ import { useSegmentedControl } from './hooks/calciteHooks';
 import { useOnEvent } from './arcgisUtils';
 import { TeamPanel } from './components/TeamPanel';
 import { useTeamsLayer } from './hooks/teamLayerHooks';
-import { useAthletesLayer } from './hooks/athleteLayerHooks';
-import { useFeatureLayerView } from './arcgisUtils/useGraphicsLayer';
 import { Sport } from './utils/imageUtils';
 
 export function App() {
@@ -36,39 +32,16 @@ export function App() {
     itemProps,
   } = useSegmentedControl<Sport>(Sport.Hockey);
 
+  useEffect(() => {
+    // setSelectedPlayerId(undefined);
+    setSelectedTeamId(undefined);
+  }, [selectedSport]);
+
   const { teamsLayer, teamFeatures } = useTeamsLayer(
     mapView,
     selectedTeamId,
     selectedSport
   );
-
-  const selectedTeam = useMemo(() => {
-    const feat = teamFeatures?.find(
-      (f) => f.attributes.id.toString() === selectedTeamId
-    );
-
-    return feat;
-  }, [selectedTeamId, teamFeatures]);
-
-  const { athleteQuery, athletesLayer } = useAthletesLayer(
-    mapView,
-    selectedTeam,
-    selectedSport
-  );
-
-  const athleteLayerView = useFeatureLayerView(mapView, athletesLayer);
-
-  useOnEvent(mapView, 'click', async (e) => {
-    // const mapHit = await mapView?.hitTest(e, {
-    //   include: [athletesLayer],
-    // });
-    // if (!mapHit || mapHit.results.length === 0) return;
-    // const [firstHit] = mapHit.results;
-    // if (isGraphicsHit(firstHit)) {
-    //   athleteLayerView?.highlight(firstHit.graphic.attributes.ObjectID);
-    // }
-    // console.log(mapHit);
-  });
 
   useOnEvent(mapView, 'click', async (e) => {
     const mapHit = await mapView?.hitTest(e, {
@@ -108,7 +81,7 @@ export function App() {
             ui: { components: [] },
             center: [-98, 38.88],
             zoom: 4,
-
+            padding: { right: 300 },
             constraints: {
               minZoom: 2,
               maxZoom: 10,
@@ -119,42 +92,39 @@ export function App() {
             setMapView(loadedView);
           }}
           style={{ height: '100vh' }}
-        >
-          <ArcUI position="top-left">
-            <CalcitePanel>
-              <CalciteSegmentedControl
-                onCalciteSegmentedControlChange={handleSelectionChange}
-              >
-                {Object.values(Sport).map((sport) => (
-                  <CalciteSegmentedControlItem
-                    key={sport}
-                    {...itemProps(sport as Sport, sport)}
-                  />
-                ))}
-              </CalciteSegmentedControl>
-            </CalcitePanel>
-          </ArcUI>
-
-          <ArcUI position="top-right">
+        />
+        <div className="absolute inset-4 flex justify-between items-start pointer-events-none [&>*]:pointer-events-auto ">
+          <div>
+            <CalciteSegmentedControl
+              onCalciteSegmentedControlChange={handleSelectionChange}
+            >
+              {Object.values(Sport).map((sport) => (
+                <CalciteSegmentedControlItem
+                  key={sport}
+                  {...itemProps(sport as Sport, sport)}
+                />
+              ))}
+            </CalciteSegmentedControl>
+          </div>
+          {teamFeatures && mapView && (
             <TeamPanel
-              team={selectedTeam?.attributes}
-              teams={teamFeatures?.map((f) => f.attributes)}
-              athletes={athleteQuery.data}
+              mapView={mapView}
+              teamId={selectedTeamId}
+              teams={teamFeatures}
               onAthleteClick={(athlete) => {
                 setSelectedPlayerId(athlete.attributes.id.toString());
                 mapView?.goTo({
                   target: athlete.geometry,
-                  zoom: 10,
+                  zoom: 8,
                 });
               }}
-              loading={athleteQuery.isLoading}
               sport={selectedSport}
               onTeamChange={(team) => {
                 setSelectedTeamId(team?.id.toString());
               }}
             />
-          </ArcUI>
-        </MapViewComponent>
+          )}
+        </div>
       </CalciteShell>
     </div>
   );

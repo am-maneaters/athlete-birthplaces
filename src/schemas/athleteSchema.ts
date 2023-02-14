@@ -15,12 +15,7 @@ export const athleteSchema = object().shape({
   age: number().required().nullable(),
   dateOfBirth: string().required().nullable(),
   debutYear: number().nullable(),
-  headshotUrl: string()
-    .url()
-    .default(
-      'https://thesanctuaryupc.com/wp-content/uploads/2014/07/Headshot-Placeholder-Vertix.jpg'
-    )
-    .nullable(),
+  headshotUrl: string().url().nullable(),
   jersey: string().nullable(),
   positionName: string().required(),
   positionDisplayName: string().required(),
@@ -34,6 +29,7 @@ export const athleteSchema = object().shape({
   active: boolean().required(),
   statusType: string().required(),
   statusName: string().required(),
+  league: string().required(),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

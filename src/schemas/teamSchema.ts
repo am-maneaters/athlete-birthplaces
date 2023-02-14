@@ -27,6 +27,7 @@ export const teamSchema = object().shape({
   venueState: string().nullable(),
   venueCountry: string().nullable(),
   venueAddress: string().required(),
+  league: string().required(),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

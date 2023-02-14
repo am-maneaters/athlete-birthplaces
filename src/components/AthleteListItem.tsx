@@ -22,7 +22,6 @@ export const AthleteListItem = ({
     birthPlace,
     type,
     jersey,
-    positionName,
     displayHeight,
     displayWeight,
     dateOfBirth,
@@ -48,6 +47,7 @@ export const AthleteListItem = ({
           alt="Team Logo"
           height="100px"
           className="opacity-20 scale-125 ml-2"
+          loading="lazy"
         />
         {showImage && (
           <img

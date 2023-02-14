@@ -57,10 +57,7 @@ export function useAthletesLayer(
       },
     ],
     effect: 'bloom(2.7, 0.5px, 2%)',
-  });
-
-  useEffect(() => {
-    athletesLayer.renderer = new SimpleRenderer({
+    renderer: new SimpleRenderer({
       symbol: new SimpleMarkerSymbol({
         color: [255, 255, 255, 1],
         size: 3,
@@ -69,10 +66,10 @@ export function useAthletesLayer(
           width: 1,
         },
       }),
-    });
-  }, [athletesLayer]);
+    }),
+  });
 
-  const athletesView = useFeatureLayerView(mapView, athletesLayer);
+  const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
 
   const playerLineLayer = useFeatureLayer(mapView, {
     title: 'Player Lines',
@@ -97,14 +94,14 @@ export function useAthletesLayer(
   });
 
   useEffect(() => {
-    if (!mapView || !athletesView) return;
+    if (!mapView || !athletesLayerView) return;
 
     const sportTypeFilter = new FeatureFilter({
       where: `type = '${selectedSport}'`,
     });
 
-    athletesView.filter = sportTypeFilter;
-  }, [mapView, athletesView, selectedSport]);
+    athletesLayerView.filter = sportTypeFilter;
+  }, [mapView, athletesLayerView, selectedSport]);
 
   useEffect(() => {
     if (!selectedTeam) {
@@ -125,7 +122,9 @@ export function useAthletesLayer(
   const athleteQuery = useQuery(
     ['relatedPlayers', selectedTeam, selectedSport],
     async ({ signal }) => {
-      const features = await athletesLayer.queryFeatures(
+      if (!athletesLayerView || !selectedTeam) return [];
+
+      const features = await athletesLayerView.queryFeatures(
         {
           where: `type = '${selectedSport}' AND teamId = ${selectedTeam?.attributes.id}`,
 
@@ -143,6 +142,7 @@ export function useAthletesLayer(
       onError: (err) => {
         console.log(err);
       },
+      select: (data) => (data?.length === 0 ? undefined : data),
     }
   );
 
@@ -177,17 +177,21 @@ export function useAthletesLayer(
         selectedTeam.geometry.longitude,
         selectedTeam.geometry.latitude,
       ];
-      const newGraphics = athleteQuery.data.map(({ geometry, attributes }) => {
-        const polyline = new Polyline({
-          paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
-        });
+      const newGraphicsPromise = athleteQuery.data.map(
+        async ({ geometry, attributes }) => {
+          const polyline = new Polyline({
+            paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
+          });
 
-        return new Graphic({
-          geometry: polyline,
+          return new Graphic({
+            geometry: polyline,
 
-          attributes: { ...attributes },
-        });
-      });
+            attributes: { ...attributes },
+          });
+        }
+      );
+
+      const newGraphics = await Promise.all(newGraphicsPromise);
 
       await replaceFeatures(playerLineLayer, newGraphics);
 

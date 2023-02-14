@@ -4,6 +4,13 @@ export enum Sport {
   Basketball = 'basketball',
   Baseball = 'baseball',
 }
+
+export const sports = [
+  Sport.Hockey,
+  Sport.Football,
+  Sport.Basketball,
+  Sport.Baseball,
+];
 const leagueLookup = {
   [Sport.Hockey]: 'nhl',
   [Sport.Football]: 'nfl',
