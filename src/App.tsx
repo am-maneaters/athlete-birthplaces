@@ -14,7 +14,7 @@ import { isGraphicsHit } from './utils/esriUtils';
 
 import Basemap from '@arcgis/core/Basemap';
 import { useSegmentedControl } from './hooks/calciteHooks';
-import { useOnEvent } from './arcgisUtils';
+import { useOnEvent } from './arcgisUtils/useOnEvent';
 import { TeamPanel } from './components/TeamPanel';
 import { useTeamsLayer } from './hooks/teamLayerHooks';
 import { Sport } from './utils/imageUtils';

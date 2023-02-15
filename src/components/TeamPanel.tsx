@@ -2,11 +2,7 @@ import {
   CalciteList,
   CalciteActionBar,
   CalciteAction,
-  CalciteDropdown,
-  CalciteButton,
-  CalciteDropdownItem,
   CalciteListItem,
-  CalciteDropdownGroup,
 } from '@esri/calcite-components-react';
 import { AthleteListItem } from './AthleteListItem';
 import { Team } from '../schemas/teamSchema';
@@ -16,29 +12,7 @@ import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Sport, getLeagueLogoUrl } from '../utils/imageUtils';
 import { TeamListItem } from './TeamListItem';
 import { useAthletesLayer } from '../hooks/athleteLayerHooks';
-
-type SortField = {
-  field: keyof Athlete;
-  altField?: keyof Athlete;
-  label: string;
-  transform?: (val: string | number | boolean) => string | number;
-  group?: boolean;
-};
-
-const sortingFields: SortField[] = [
-  {
-    field: 'birthState',
-    altField: 'birthCountry',
-    label: 'Birthplace',
-    group: true,
-  },
-  { field: 'fullName', label: 'Name' },
-  { field: 'weight', label: 'Weight' },
-  { field: 'height', label: 'Height' },
-  { field: 'dateOfBirth', label: 'Age', transform: Number },
-  { field: 'positionName', label: 'Position', group: true },
-  { field: 'jersey', label: 'Jersey', transform: Number },
-];
+import { ListSorter, sortingFields } from './ListSorter';
 
 type TeamPanelProps = {
   mapView: __esri.MapView;
@@ -77,47 +51,43 @@ export function TeamPanel({
     [sort.altField, sort.field]
   );
 
-  const sortedAthletes = useMemo(
-    () =>
-      athletes?.sort(({ attributes: a }, { attributes: b }) => {
-        const field = getSortField(a);
-        const transform = sort.transform ?? ((val: string) => val);
-        const aVal = a[field];
-        const bVal = b[field];
-        if (!aVal && !bVal) return 0;
-        if (!aVal) return -1;
-        if (!bVal) return 1;
-
-        const aTransformed = transform(aVal);
-        const bTransformed = transform(bVal);
-
-        if (aTransformed < bTransformed) {
-          return sortDirection === 'asc' ? -1 : 1;
-        }
-        if (aTransformed > bTransformed) {
-          return sortDirection === 'asc' ? 1 : -1;
-        }
-        return 0;
-      }),
-    [athletes, getSortField, sort.transform, sortDirection]
-  );
-
   const groupedAthletes = useMemo(() => {
-    if (!sort.group || !sortedAthletes) return undefined;
+    if (!athletes) return undefined;
     // eslint-disable-next-line unicorn/no-array-reduce
-    return sortedAthletes.reduce((acc, athlete) => {
+    const lookup = athletes.reduce((acc, athlete) => {
       const field = getSortField(athlete.attributes);
 
       const position = athlete.attributes[field];
       if (!position) return acc;
-      const key = position.toString();
+      const key = sort.transform
+        ? sort.transform(position)
+        : position.toString();
       if (acc[key]) {
         acc[key].push(athlete);
         return acc;
       }
       return { ...acc, [key]: [athlete] };
     }, {} as Record<string, PointGraphic<Athlete>[]>);
-  }, [getSortField, sort.group, sortedAthletes]);
+    return Object.entries(lookup);
+  }, [athletes, getSortField, sort]);
+
+  const sortedAthletes = useMemo(
+    () =>
+      groupedAthletes?.sort(([aVal], [bVal]) => {
+        if (!aVal && !bVal) return 0;
+        if (!aVal) return -1;
+        if (!bVal) return 1;
+
+        if (aVal < bVal) {
+          return sortDirection === 'asc' ? -1 : 1;
+        }
+        if (aVal > bVal) {
+          return sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      }),
+    [groupedAthletes, sortDirection]
+  );
 
   // teams by id
   const teamsById = useMemo(
@@ -183,44 +153,12 @@ export function TeamPanel({
           />
         </CalciteActionBar>
 
-        <CalciteDropdown>
-          <CalciteButton
-            slot="trigger"
-            iconStart="sort-descending"
-            kind="neutral"
-            appearance="outline-fill"
-          >
-            {sort.label}
-          </CalciteButton>
-          <CalciteDropdownGroup groupTitle="Sort Fields">
-            {sortingFields.map((sortField) => (
-              <CalciteDropdownItem
-                key={sortField.field}
-                label={sortField.label}
-                onCalciteDropdownItemSelect={() => setSort(sortField)}
-                selected={sortField.label === sort.label ? true : undefined}
-              >
-                {sortField.label}
-              </CalciteDropdownItem>
-            ))}
-          </CalciteDropdownGroup>
-          <CalciteDropdownGroup groupTitle="Sort Direction">
-            <CalciteDropdownItem
-              label="Ascending"
-              onCalciteDropdownItemSelect={() => setSortDirection('asc')}
-              selected={sortDirection === 'asc' ? true : undefined}
-            >
-              Ascending
-            </CalciteDropdownItem>
-            <CalciteDropdownItem
-              label="Descending"
-              onCalciteDropdownItemSelect={() => setSortDirection('desc')}
-              selected={sortDirection === 'desc' ? true : undefined}
-            >
-              Descending
-            </CalciteDropdownItem>
-          </CalciteDropdownGroup>
-        </CalciteDropdown>
+        <ListSorter
+          sort={sort}
+          setSort={setSort}
+          sortDirection={sortDirection}
+          setSortDirection={setSortDirection}
+        />
       </div>
 
       <div className="overflow-auto flex-1">
@@ -228,9 +166,9 @@ export function TeamPanel({
           className="min-h-[100px]"
           loading={loading ? true : undefined}
         >
-          {groupedAthletes &&
-            Object.entries(groupedAthletes).map(([groupLabel, athletes]) => (
-              <Fragment key={groupLabel}>
+          {sortedAthletes?.map(([groupLabel, athletes]) => (
+            <Fragment key={groupLabel}>
+              {sort.group && (
                 <CalciteListItem
                   label={groupLabel}
                   className="sticky top-0 z-sticky pointer-events-none bg-brand"
@@ -239,29 +177,19 @@ export function TeamPanel({
                       'var(--calcite-ui-foreground-2)',
                   }}
                 />
+              )}
 
-                {athletes?.map((athlete) => (
-                  <AthleteListItem
-                    key={`${athlete.attributes.type}-${athlete.attributes.id}`}
-                    mode={viewMode}
-                    athlete={athlete.attributes}
-                    teamLogoUrl={teamsById?.[athlete.attributes.teamId]?.logo}
-                    onClick={() => onAthleteClick(athlete)}
-                  />
-                ))}
-              </Fragment>
-            ))}
-
-          {!groupedAthletes &&
-            sortedAthletes?.map((athlete) => (
-              <AthleteListItem
-                key={`${athlete.attributes.type}-${athlete.attributes.id}`}
-                mode={viewMode}
-                athlete={athlete.attributes}
-                teamLogoUrl={teamsById?.[athlete.attributes.teamId]?.logo}
-                onClick={() => onAthleteClick(athlete)}
-              />
-            ))}
+              {athletes?.map((athlete) => (
+                <AthleteListItem
+                  key={`${athlete.attributes.type}-${athlete.attributes.id}`}
+                  mode={viewMode}
+                  athlete={athlete.attributes}
+                  teamLogoUrl={teamsById?.[athlete.attributes.teamId]?.logo}
+                  onClick={() => onAthleteClick(athlete)}
+                />
+              ))}
+            </Fragment>
+          ))}
 
           {!sortedAthletes &&
             teams?.map((team) => (
