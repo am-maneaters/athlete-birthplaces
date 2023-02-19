@@ -8,7 +8,7 @@ import {
   CalciteShell,
 } from '@esri/calcite-components-react';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import MapView from '@arcgis/core/views/MapView';
 import { isGraphicsHit } from './utils/esriUtils';
 
@@ -111,12 +111,12 @@ export function App() {
               mapView={mapView}
               teamId={selectedTeamId}
               teams={teamFeatures}
-              onAthleteClick={(athlete) => {
-                setSelectedPlayerId(athlete.attributes.id.toString());
-                mapView?.goTo({
-                  target: athlete.geometry,
-                  zoom: 8,
-                });
+              onAthleteClick={(athleteId) => {
+                setSelectedPlayerId(athleteId);
+                // mapView?.goTo({
+                //   target: athlete.geometry,
+                //   zoom: 8,
+                // });
               }}
               sport={selectedSport}
               onTeamChange={(team) => {

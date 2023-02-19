@@ -60,7 +60,7 @@ export function useAthletesLayer(
     renderer: new SimpleRenderer({
       symbol: new SimpleMarkerSymbol({
         color: [255, 255, 255, 1],
-        size: 3,
+        size: 1.5,
         outline: {
           color: [255, 255, 255, 0.1],
           width: 1,

@@ -36,7 +36,7 @@ export const sortingFields: SortField[] = [
       return val;
     },
   },
-  { field: 'fullName', label: 'Name' },
+  { field: 'lastName', label: 'Last Name' },
   { field: 'weight', label: 'Weight' },
   { field: 'height', label: 'Height' },
   { field: 'dateOfBirth', label: 'Age', transform: Number },
