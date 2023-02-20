@@ -48,18 +48,21 @@ export function useAthletesLayer(
         labelPlacement: 'above-center',
       },
     ],
-    effect: 'bloom(2.7, 0.5px, 2%)',
-    renderer: new SimpleRenderer({
+  });
+
+  useEffect(() => {
+    athletesLayer.effect = 'bloom(1, 1px, 99%)';
+    athletesLayer.renderer = new SimpleRenderer({
       symbol: new SimpleMarkerSymbol({
         color: [255, 255, 255, 1],
-        size: 1.5,
+        size: 5,
         outline: {
           color: [255, 255, 255, 0.1],
           width: 1,
         },
       }),
-    }),
-  });
+    });
+  }, [athletesLayer]);
 
   const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
 

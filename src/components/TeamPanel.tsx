@@ -10,21 +10,53 @@ import {
 import { AthleteListItem } from './AthleteListItem';
 import { Team } from '../schemas/teamSchema';
 import { PointGraphic } from '../typings/AthleteTypes';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Sport, getLeagueLogoUrl } from '../utils/imageUtils';
 import { TeamListItem } from './TeamListItem';
 import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 import { ListSorter } from './ListSorter';
 import { PanelHeader } from './PanelHeader';
 import { SortField, useGroupSort } from '../hooks/useGroupSort';
-import { getStateName, states } from '../data/statesLookup';
-import { useQuery } from '@tanstack/react-query';
-import { useFeatureLayerView } from '../arcgisUtils/useGraphicsLayer';
+import { getStateName } from '../data/statesLookup';
+import { UseQueryResult, useQuery } from '@tanstack/react-query';
+import {
+  useFeatureLayer,
+  useFeatureLayerView,
+} from '../arcgisUtils/useGraphicsLayer';
 import { array } from 'yup';
 import { athleteSchema } from '../schemas/athleteSchema';
 import { graphicSchema } from '../schemas/graphicSchema';
 
+import Polyline from '@arcgis/core/geometry/Polyline';
+
 import countryCodes from '../data/countryCodes.json';
+import { AthleteHover } from './AthleteHover';
+import Color from '@arcgis/core/Color';
+import Graphic from '@arcgis/core/Graphic';
+import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
+import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
+import { getLuminance } from '../utils/colorUtils';
+import { replaceFeatures } from '../utils/layerUtils';
+
+const ListContainer = ({
+  children,
+  loading,
+  enabled,
+}: {
+  children: React.ReactNode;
+  loading: boolean;
+  enabled: boolean;
+}) =>
+  enabled ? (
+    <div className="overflow-auto flex-1">
+      <CalciteList
+        className="min-h-[100px]"
+        loading={loading ? true : undefined}
+      >
+        {children}
+      </CalciteList>
+    </div>
+  ) : null;
 
 const sortingFields: SortField[] = [
   {
@@ -49,7 +81,7 @@ type TeamPanelProps = {
   mapView: __esri.MapView;
   teamId: string | undefined;
   onAthleteSelect: (athlete: string) => void;
-  teams: PointGraphic<Team>[];
+  teamQuery: UseQueryResult<PointGraphic<Team>[]>;
   sport: Sport;
   onTeamSelect: (team: Team | undefined) => void;
   mode: 'Teams' | 'Athletes' | 'Regions';
@@ -72,7 +104,7 @@ export function TeamPanel({
   teamId,
   mapView,
   onAthleteSelect,
-  teams,
+  teamQuery,
   sport,
   onTeamSelect,
   mode,
@@ -81,18 +113,19 @@ export function TeamPanel({
   const [regionType, setRegionType] = useState<'State' | 'Country' | 'City'>(
     'Country'
   );
-  const team = useMemo(() => {
-    const feat = teams?.find((f) => f.attributes.id.toString() === teamId);
 
-    return feat;
-  }, [teams, teamId]);
+  const teams = teamQuery.data;
+  const team = useMemo(
+    () => teams?.find((f) => f.attributes.id.toString() === teamId),
+    [teams, teamId]
+  );
 
   const { athletesLayer } = useAthletesLayer(mapView, team, sport);
 
   const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
-
-  const { data: Regions, isLoading: RegionsLoading } = useQuery({
+  const { data: Regions, isLoading: regionsLoading } = useQuery({
     queryKey: ['Regions', sport, regionType],
+    enabled: mode === 'Regions',
     queryFn: async ({ signal }) => {
       const groupFields =
         regionType === 'State'
@@ -127,16 +160,17 @@ export function TeamPanel({
         count: attributes.countOFExpr,
       })),
   });
-  console.log(Regions);
-  const { data: athletes, isLoading } = useQuery({
+
+  const { data: athletes, isLoading: athletesLoading } = useQuery({
     queryKey: ['relatedPlayers', team, sport, athleteSchema],
+    enabled: mode === 'Athletes',
     queryFn: async ({ signal }) => {
+      console.log(team);
       if (!team) return [];
 
       const features = await athletesLayerView?.queryFeatures(
         {
           where: `type = '${sport}' AND teamId = ${team?.attributes.id}`,
-
           outFields: ['*'],
           returnGeometry: true,
         },
@@ -144,6 +178,8 @@ export function TeamPanel({
       );
 
       if (!features) return [];
+
+      console.log(features.features);
 
       return array()
         .of(graphicSchema(athleteSchema))
@@ -154,6 +190,70 @@ export function TeamPanel({
     },
     select: (data) => (data?.length === 0 ? undefined : data),
   });
+
+  const playerLineLayer = useFeatureLayer(mapView, {
+    title: 'Player Lines',
+    source: [],
+    objectIdField: 'id',
+    geometryType: 'polyline',
+    spatialReference: { wkid: 4326 },
+    fields: [
+      {
+        name: 'id',
+        alias: 'id',
+        type: 'oid',
+      },
+    ],
+    renderer: new SimpleRenderer({
+      symbol: new SimpleLineSymbol({
+        color: [255, 0, 0, 0.25],
+        width: 1,
+      }),
+    }),
+    effect: 'bloom(1.7, 0.5px, 2%)',
+  });
+
+  useEffect(() => {
+    let isUpdating = false;
+    async function updateLines() {
+      if (isUpdating) return;
+      isUpdating = true;
+      await replaceFeatures(playerLineLayer, []);
+      if (!athletes || !team) return;
+      const primaryColor = new Color(team.attributes.color);
+      const secondaryColor = new Color(team.attributes.alternateColor);
+      const lineColor =
+        getLuminance(primaryColor) > getLuminance(secondaryColor)
+          ? primaryColor
+          : secondaryColor;
+      lineColor.a = 0.25;
+      playerLineLayer.renderer = new SimpleRenderer({
+        symbol: new SimpleLineSymbol({
+          color: lineColor,
+          width: 2,
+        }),
+      });
+      const teamPoint = [team.geometry.longitude, team.geometry.latitude];
+      const newGraphicsPromise = athletes.map(
+        async ({ geometry, attributes }) => {
+          const polyline = new Polyline({
+            paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
+          });
+          return new Graphic({
+            geometry: polyline,
+            attributes: { ...attributes },
+          });
+        }
+      );
+      const newGraphics = await Promise.all(newGraphicsPromise);
+      await replaceFeatures(playerLineLayer, newGraphics);
+      isUpdating = false;
+    }
+    updateLines();
+    return () => {
+      isUpdating = true;
+    };
+  }, [athletes, playerLineLayer, team]);
 
   const [sort, setSort] = useState(sortingFields[0]);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -178,6 +278,7 @@ export function TeamPanel({
 
   return (
     <div className="bg-foreground-2 h-full">
+      {/* <AthleteHover mapView={mapView} athletesLayer={athletesLayer} /> */}
       <CalciteTabs layout="center" className="h-full">
         {mode !== 'Athletes' && (
           <CalciteTabNav slot="title-group">
@@ -228,7 +329,7 @@ export function TeamPanel({
           )}
           {mode === 'Teams' && (
             <PanelHeader
-              title={teams[0].attributes.league}
+              title={teams?.[0].attributes.league ?? 'Teams'}
               subtitle="Teams"
               logo={getLeagueLogoUrl(sport, { w: 500, h: 500 })}
             />
@@ -263,82 +364,83 @@ export function TeamPanel({
             </div>
           )}
 
-          <div className="overflow-auto flex-1">
-            <CalciteList
-              className="min-h-[100px]"
-              loading={isLoading ? true : undefined}
-            >
-              {mode === 'Athletes' &&
-                sortedAthletes?.map(([groupLabel, athletes]) => (
-                  <Fragment key={groupLabel}>
-                    {sort.group && (
-                      <CalciteListItem
-                        label={groupLabel}
-                        className="sticky top-0 z-sticky pointer-events-none bg-brand"
-                        style={{
-                          '--calcite-ui-foreground-1':
-                            'var(--calcite-ui-foreground-2)',
-                        }}
-                      />
-                    )}
-
-                    {athletes.map((athlete) => (
-                      <AthleteListItem
-                        key={`${athlete.type}-${athlete.id}`}
-                        mode={viewMode}
-                        athlete={athlete}
-                        teamLogoUrl={teamsById?.[athlete.teamId]?.logo}
-                        onClick={() => onAthleteSelect(athlete.id.toString())}
-                      />
-                    ))}
-                  </Fragment>
-                ))}
-
-              {mode === 'Teams' &&
-                teams
-                  ?.sort((a, b) =>
-                    a.attributes.location.localeCompare(b.attributes.location)
-                  )
-                  .map((team) => (
-                    <TeamListItem
-                      key={team.attributes.id}
-                      team={team.attributes}
-                      onClick={onTeamSelect}
-                    />
-                  ))}
-
-              {mode === 'Regions' &&
-                Regions?.map((region, i) => (
+          <ListContainer
+            loading={athletesLoading}
+            enabled={mode === 'Athletes'}
+          >
+            {sortedAthletes?.map(([groupLabel, athletes]) => (
+              <Fragment key={groupLabel}>
+                {sort.group && (
                   <CalciteListItem
-                    key={region[regionType] + i}
-                    label={region[regionType]}
-                    // onClick={() => onClick(team)}
-                  >
-                    <div
-                      slot="content-start"
-                      className="flex relative overflow-y-clip w-[100px] h-[100px] content-center"
-                    >
-                      <img
-                        src={region.img}
-                        alt="Team Logo"
-                        height="108px"
-                        width="144px"
-                        loading="lazy"
-                        className="absolute inset-0 m-auto pl-2"
-                      />
-                    </div>
-                    <div slot="content" className="flex flex-col items-end">
-                      <div className="flex items-center text-2 text-end">
-                        {region[regionType]}
-                      </div>
-                      <div className="flex items-center text-n2 text-end">
-                        <span>{region.count}</span>
-                      </div>
-                    </div>
-                  </CalciteListItem>
+                    label={groupLabel}
+                    className="sticky top-0 z-sticky pointer-events-none bg-brand"
+                    style={{
+                      '--calcite-ui-foreground-1':
+                        'var(--calcite-ui-foreground-2)',
+                    }}
+                  />
+                )}
+
+                {athletes.map((athlete) => (
+                  <AthleteListItem
+                    key={`${athlete.type}-${athlete.id}`}
+                    mode={viewMode}
+                    athlete={athlete}
+                    teamLogoUrl={teamsById?.[athlete.teamId]?.logo}
+                    onClick={() => onAthleteSelect(athlete.id.toString())}
+                  />
                 ))}
-            </CalciteList>
-          </div>
+              </Fragment>
+            ))}
+          </ListContainer>
+
+          <ListContainer
+            loading={teamQuery.isLoading}
+            enabled={mode === 'Teams'}
+          >
+            {teams
+              ?.sort((a, b) =>
+                a.attributes.location.localeCompare(b.attributes.location)
+              )
+              .map((team) => (
+                <TeamListItem
+                  key={team.attributes.id}
+                  team={team.attributes}
+                  onClick={onTeamSelect}
+                />
+              ))}
+          </ListContainer>
+
+          <ListContainer loading={regionsLoading} enabled={mode === 'Regions'}>
+            {Regions?.map((region, i) => (
+              <CalciteListItem
+                key={region[regionType] + i}
+                label={region[regionType]}
+              >
+                <div
+                  slot="content-start"
+                  className="flex relative overflow-y-clip w-[100px] h-[100px] content-center"
+                >
+                  <img
+                    src={region.img}
+                    alt="Team Logo"
+                    height="108px"
+                    width="144px"
+                    loading="lazy"
+                    className="absolute inset-0 m-auto pl-2"
+                  />
+                </div>
+                <div slot="content" className="flex flex-col items-end">
+                  <div className="flex items-center text-2 text-end">
+                    {region[regionType]}
+                  </div>
+                  <div className="flex items-center text-n2 text-end">
+                    <span>{region.count}</span>
+                  </div>
+                </div>
+              </CalciteListItem>
+            ))}
+          </ListContainer>
         </div>
       </CalciteTabs>
     </div>

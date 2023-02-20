@@ -94,7 +94,7 @@ export function useTeamsLayer(
   }, [teamsLayer, mapView, selectedTeamId]);
 
   //  Query the base team layer for the selected sport
-  const { data: teamFeatures } = useQuery({
+  const teamQuery = useQuery({
     queryKey: ['teamInfo', selectedSport, teamSchema],
     queryFn: async ({ signal }) => {
       const features = await baseTeamLayer.queryFeatures(
@@ -113,6 +113,7 @@ export function useTeamsLayer(
 
   //  Replace features in the teams layer
   useEffect(() => {
+    const { data: teamFeatures } = teamQuery;
     if (!teamFeatures || !teamsLayer) return;
 
     teamsLayer.renderer = new UniqueValueRenderer({
@@ -139,7 +140,7 @@ export function useTeamsLayer(
     );
 
     replaceFeatures(teamsLayer, newFeatures);
-  }, [baseTeamLayer.fields, teamFeatures, teamsLayer]);
+  }, [baseTeamLayer.fields, teamQuery, teamsLayer]);
 
-  return { teamsLayer, teamFeatures };
+  return { teamsLayer, teamQuery };
 }

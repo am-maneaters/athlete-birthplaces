@@ -82,14 +82,10 @@ function hasKey<O extends Record<string, unknown>>(
   return key in obj;
 }
 
-export const getStateName = (stateCode: string) => {
-  if (!stateCode) {
-    return undefined;
+export const getStateName = <T extends string | undefined>(stateCode: T): T => {
+  const formattedCode = stateCode?.toUpperCase();
+  if (formattedCode && hasKey(states, formattedCode)) {
+    return states[formattedCode] as T;
   }
-  const formattedCode = stateCode.toUpperCase();
-  if (hasKey(states, formattedCode)) {
-    return states[formattedCode];
-  }
-  console.error(`State code ${stateCode} not found in states lookup`);
   return stateCode;
 };

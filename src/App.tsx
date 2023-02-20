@@ -41,14 +41,25 @@ export function App() {
     setSelectedTeamId(undefined);
   }, [selectedSport]);
 
-  const { teamsLayer, teamFeatures } = useTeamsLayer(
+  const { teamsLayer, teamQuery } = useTeamsLayer(
     mapView,
     selectedTeamId,
     selectedSport
   );
 
   useEffect(() => {
+    if (selectedTeamId) {
+      setPanelMode('Athletes');
+    } else {
+      setPanelMode('Teams');
+    }
+  }, [selectedTeamId]);
+
+  useEffect(() => {
     teamsLayer.visible = panelMode === 'Regions' ? false : true;
+    if (panelMode === 'Regions') {
+      setSelectedTeamId(undefined);
+    }
   }, [panelMode, teamsLayer]);
 
   useOnEvent(mapView, 'click', async (e) => {
@@ -114,11 +125,11 @@ export function App() {
               ))}
             </CalciteSegmentedControl>
           </div>
-          {teamFeatures && mapView && (
+          {mapView && (
             <TeamPanel
               mapView={mapView}
               teamId={selectedTeamId}
-              teams={teamFeatures}
+              teamQuery={teamQuery}
               onAthleteSelect={(athleteId) => {
                 // setPanelMode('Athletes');
                 setSelectedPlayerId(athleteId);
