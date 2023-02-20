@@ -6,7 +6,7 @@ type Props = {
   onBackClick?: () => void;
   logo: string;
   title: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
 };
 
 export const PanelHeader = ({

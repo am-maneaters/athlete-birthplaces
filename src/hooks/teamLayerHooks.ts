@@ -94,9 +94,9 @@ export function useTeamsLayer(
   }, [teamsLayer, mapView, selectedTeamId]);
 
   //  Query the base team layer for the selected sport
-  const { data: teamFeatures } = useQuery(
-    ['teamInfo', selectedSport],
-    async ({ signal }) => {
+  const { data: teamFeatures } = useQuery({
+    queryKey: ['teamInfo', selectedSport, teamSchema],
+    queryFn: async ({ signal }) => {
       const features = await baseTeamLayer.queryFeatures(
         {
           where: `type = '${selectedSport}'`,
@@ -108,8 +108,8 @@ export function useTeamsLayer(
       return array()
         .of(graphicSchema(teamSchema))
         .validate(features.features) as Promise<PointGraphic<Team>[]>;
-    }
-  );
+    },
+  });
 
   //  Replace features in the teams layer
   useEffect(() => {

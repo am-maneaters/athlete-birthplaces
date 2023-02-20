@@ -65,4 +65,31 @@ export const states = {
   QC: 'Quebec',
   SK: 'Saskatchewan',
   YT: 'Yukon',
+
+  // Australian states
+  ACT: 'Australian Capital Territory',
+  NSW: 'New South Wales',
+  QLD: 'Queensland',
+  SA: 'South Australia',
+  TAS: 'Tasmania',
+  VIC: 'Victoria',
+};
+
+function hasKey<O extends Record<string, unknown>>(
+  obj: O,
+  key: string | number | symbol
+): key is keyof O {
+  return key in obj;
+}
+
+export const getStateName = (stateCode: string) => {
+  if (!stateCode) {
+    return undefined;
+  }
+  const formattedCode = stateCode.toUpperCase();
+  if (hasKey(states, formattedCode)) {
+    return states[formattedCode];
+  }
+  console.error(`State code ${stateCode} not found in states lookup`);
+  return stateCode;
 };

@@ -16,15 +16,15 @@ export function TeamListItem({
       >
         <img
           src={team.logo}
-          alt="Athlete Headshot"
+          alt="Team Logo"
           height="100px"
           width="140px"
           loading="lazy"
         />
       </div>
       <div slot="content" className="flex flex-col items-end">
-        <div className="flex items-center text-2">{team.displayName}</div>
-        <div className="flex items-center text-n2">
+        <div className="flex items-center text-2 text-end">{team.displayName}</div>
+        <div className="flex items-center text-n2 text-end">
           <span>{team.venueAddress}</span>
         </div>
       </div>

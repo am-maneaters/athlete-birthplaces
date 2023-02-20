@@ -1,10 +1,7 @@
 // boilerplate function component with props
 
 import React from 'react';
-import {
-  CalciteListItem,
-  CalciteDatePicker,
-} from '@esri/calcite-components-react';
+import { CalciteListItem } from '@esri/calcite-components-react';
 import { Athlete } from '../schemas/athleteSchema';
 import { Sport, getAthleteHeadshotUrl } from '../utils/imageUtils';
 
@@ -65,10 +62,12 @@ export const AthleteListItem = ({
             }}
           />
         )}
-        <span className="absolute top-0 opacity-50">#{jersey}</span>
       </div>
       <div slot="content">
-        <div className="flex items-center text-1">{fullName}</div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-1">{fullName}</span>
+          <span className="text-n3 text-color-3">#{jersey}</span>
+        </div>
         <div className="flex items-center text-n3">
           <span>{birthPlace}</span>
         </div>

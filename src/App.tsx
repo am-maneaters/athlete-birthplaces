@@ -26,6 +26,10 @@ export function App() {
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>();
 
+  const [panelMode, setPanelMode] = useState<'Teams' | 'Athletes' | 'Regions'>(
+    'Teams'
+  );
+
   const {
     selected: selectedSport,
     handleSelectionChange,
@@ -42,6 +46,10 @@ export function App() {
     selectedTeamId,
     selectedSport
   );
+
+  useEffect(() => {
+    teamsLayer.visible = panelMode === 'Regions' ? false : true;
+  }, [panelMode, teamsLayer]);
 
   useOnEvent(mapView, 'click', async (e) => {
     const mapHit = await mapView?.hitTest(e, {
@@ -111,17 +119,17 @@ export function App() {
               mapView={mapView}
               teamId={selectedTeamId}
               teams={teamFeatures}
-              onAthleteClick={(athleteId) => {
+              onAthleteSelect={(athleteId) => {
+                // setPanelMode('Athletes');
                 setSelectedPlayerId(athleteId);
-                // mapView?.goTo({
-                //   target: athlete.geometry,
-                //   zoom: 8,
-                // });
               }}
               sport={selectedSport}
-              onTeamChange={(team) => {
+              onTeamSelect={(team) => {
+                setPanelMode(team ? 'Athletes' : 'Teams');
                 setSelectedTeamId(team?.id.toString());
               }}
+              mode={panelMode}
+              onModeChange={setPanelMode}
             />
           )}
         </div>

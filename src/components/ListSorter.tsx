@@ -4,51 +4,14 @@ import {
   CalciteDropdownGroup,
   CalciteDropdownItem,
 } from '@esri/calcite-components-react';
-import { Athlete } from '../schemas/athleteSchema';
-import { states } from '../statesLookup';
-
-type SortField = {
-  field: keyof Athlete;
-  altField?: keyof Athlete;
-  label: string;
-  transform?: (val: string | number | boolean) => string | number;
-  group?: boolean;
-};
-
-function hasKey<O extends Record<string, unknown>>(
-  obj: O,
-  key: string | number | symbol
-): key is keyof O {
-  return key in obj;
-}
-
-export const sortingFields: SortField[] = [
-  {
-    field: 'birthState',
-    altField: 'birthCountry',
-    label: 'Birthplace',
-    group: true,
-    transform: (val) => {
-      if (typeof val !== 'string') return val.toString();
-      if (hasKey(states, val)) {
-        return states[val];
-      }
-      return val;
-    },
-  },
-  { field: 'lastName', label: 'Last Name' },
-  { field: 'weight', label: 'Weight' },
-  { field: 'height', label: 'Height' },
-  { field: 'dateOfBirth', label: 'Age', transform: Number },
-  { field: 'positionName', label: 'Position', group: true },
-  { field: 'jersey', label: 'Jersey', transform: Number },
-];
+import { SortField } from '../hooks/useGroupSort';
 
 export function ListSorter({
   sort,
   setSort,
   setSortDirection,
   sortDirection,
+  fields,
 }: {
   sort: {
     label: string;
@@ -56,6 +19,7 @@ export function ListSorter({
   setSort: (sort: SortField) => void;
   setSortDirection: (dir: 'asc' | 'desc') => void;
   sortDirection: string;
+  fields: SortField[];
 }) {
   return (
     <CalciteDropdown>
@@ -68,7 +32,7 @@ export function ListSorter({
         {sort.label}
       </CalciteButton>
       <CalciteDropdownGroup groupTitle="Sort Fields">
-        {sortingFields.map((sortField) => (
+        {fields.map((sortField) => (
           <CalciteDropdownItem
             key={sortField.field}
             label={sortField.label}
