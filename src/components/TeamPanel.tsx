@@ -6,6 +6,7 @@ import {
   CalciteTabs,
   CalciteTabNav,
   CalciteTabTitle,
+  CalciteLoader,
 } from '@esri/calcite-components-react';
 import { AthleteListItem } from './AthleteListItem';
 import { Team } from '../schemas/teamSchema';
@@ -30,7 +31,6 @@ import { graphicSchema } from '../schemas/graphicSchema';
 import Polyline from '@arcgis/core/geometry/Polyline';
 
 import countryCodes from '../data/countryCodes.json';
-import { AthleteHover } from './AthleteHover';
 import Color from '@arcgis/core/Color';
 import Graphic from '@arcgis/core/Graphic';
 import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
@@ -49,10 +49,8 @@ const ListContainer = ({
 }) =>
   enabled ? (
     <div className="overflow-auto flex-1">
-      <CalciteList
-        className="min-h-[100px]"
-        loading={loading ? true : undefined}
-      >
+      <CalciteList className="min-h-full">
+        {loading && <CalciteLoader type="indeterminate" label="Loading..." />}
         {children}
       </CalciteList>
     </div>
@@ -84,8 +82,8 @@ type TeamPanelProps = {
   teamQuery: UseQueryResult<PointGraphic<Team>[]>;
   sport: Sport;
   onTeamSelect: (team: Team | undefined) => void;
-  mode: 'Teams' | 'Athletes' | 'Regions';
-  onModeChange: (mode: 'Teams' | 'Athletes' | 'Regions') => void;
+  mode: 'Teams' | 'Regions';
+  onModeChange: (mode: 'Teams' | 'Regions') => void;
 };
 
 const TABS = ['Teams', 'Regions'] as const;
@@ -98,6 +96,15 @@ const getCountryFlag = (country: string) => {
   return code
     ? `https://flagcdn.com/144x108/${code.code.toLowerCase()}.png`
     : country;
+};
+
+type Region = {
+  img: string;
+  count: number;
+  Country: string;
+  State: string;
+  City: string;
+  label: string;
 };
 
 export function TeamPanel({
@@ -114,6 +121,8 @@ export function TeamPanel({
     'Country'
   );
 
+  const [selectedRegion, setSelectedRegion] = useState<Region>();
+
   const teams = teamQuery.data;
   const team = useMemo(
     () => teams?.find((f) => f.attributes.id.toString() === teamId),
@@ -122,22 +131,32 @@ export function TeamPanel({
 
   const { athletesLayer } = useAthletesLayer(mapView, team, sport);
 
+  const showRegionAthletes = mode === 'Regions' && !!selectedRegion;
+  const showTeamAthletes = mode === 'Teams' && !!team;
+  const showAthletes = showRegionAthletes || showTeamAthletes;
+
+  const showTeams = mode === 'Teams' && !team;
+  const showRegions = mode === 'Regions' && !selectedRegion;
+
   const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
   const { data: Regions, isLoading: regionsLoading } = useQuery({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: ['Regions', sport, regionType],
-    enabled: mode === 'Regions',
+    enabled: showRegions,
     queryFn: async ({ signal }) => {
-      const groupFields =
-        regionType === 'State'
-          ? ['birthState', 'birthCountry']
-          : regionType === 'City'
-          ? ['birthCity', 'birthState', 'birthCountry']
-          : ['birthCountry'];
+      const regionFields = {
+        City: ['birthCity', 'birthState', 'birthCountry'],
+        State: ['birthState', 'birthCountry'],
+        Country: ['birthCountry'],
+      };
+
+      const fields = regionFields[regionType];
+
       const feats = await athletesLayer?.queryFeatures(
         {
           where: `type = '${sport}'`,
           returnGeometry: false,
-          groupByFieldsForStatistics: groupFields,
+          groupByFieldsForStatistics: fields,
           orderByFields: ['count(*) desc'],
           outStatistics: [
             {
@@ -149,21 +168,66 @@ export function TeamPanel({
         },
         { signal }
       );
-      return feats;
+      return feats?.features
+        .filter((athlete) => {
+          console.log(athlete.attributes[fields[0]]);
+          return athlete.attributes[fields[0]];
+        })
+        .map(
+          ({ attributes }) =>
+            ({
+              img: getCountryFlag(attributes.birthCountry),
+              Country: attributes.birthCountry,
+              State: attributes.birthState ?? attributes.birthCountry,
+              City: attributes.birthCity,
+              count: attributes.countOFExpr,
+              label: getStateName(attributes[fields[0]]),
+            } satisfies Region)
+        );
     },
-    select: (data) =>
-      data?.features.map(({ attributes }) => ({
-        img: getCountryFlag(attributes.birthCountry),
-        Country: attributes.birthCountry,
-        State: getStateName(attributes.birthState) ?? attributes.birthCountry,
-        City: attributes.birthCity,
-        count: attributes.countOFExpr,
-      })),
   });
 
-  const { data: athletes, isLoading: athletesLoading } = useQuery({
+  const currentRegionName = useMemo(() => {
+    if (!selectedRegion) return '';
+    return selectedRegion[regionType];
+  }, [selectedRegion, regionType]);
+
+  const { data: regionAthletes, isLoading: regionAthletesLoading } = useQuery({
+    queryKey: [
+      'regionAth',
+      sport,
+      athleteSchema,
+      currentRegionName,
+      regionType,
+    ],
+    enabled: showRegionAthletes,
+    queryFn: async ({ signal }) => {
+      const where =
+        regionType === 'State'
+          ? `type = '${sport}' AND birthState = '${currentRegionName}'`
+          : regionType === 'City'
+          ? `type = '${sport}' AND birthCity = '${currentRegionName}'`
+          : `type = '${sport}' AND birthCountry = '${currentRegionName}'`;
+
+      const features = await athletesLayer?.queryFeatures(
+        {
+          where,
+          outFields: ['*'],
+        },
+        { signal }
+      );
+
+      if (!features) return [];
+
+      return array()
+        .of(athleteSchema)
+        .validate(features.features.map((f) => f.attributes));
+    },
+  });
+
+  const { data: teamAthletes, isLoading: athletesLoading } = useQuery({
     queryKey: ['relatedPlayers', team, sport, athleteSchema],
-    enabled: mode === 'Athletes',
+    enabled: showTeamAthletes,
     queryFn: async ({ signal }) => {
       console.log(team);
       if (!team) return [];
@@ -178,8 +242,6 @@ export function TeamPanel({
       );
 
       if (!features) return [];
-
-      console.log(features.features);
 
       return array()
         .of(graphicSchema(athleteSchema))
@@ -219,7 +281,7 @@ export function TeamPanel({
       if (isUpdating) return;
       isUpdating = true;
       await replaceFeatures(playerLineLayer, []);
-      if (!athletes || !team) return;
+      if (!teamAthletes || !team) return;
       const primaryColor = new Color(team.attributes.color);
       const secondaryColor = new Color(team.attributes.alternateColor);
       const lineColor =
@@ -234,7 +296,7 @@ export function TeamPanel({
         }),
       });
       const teamPoint = [team.geometry.longitude, team.geometry.latitude];
-      const newGraphicsPromise = athletes.map(
+      const newGraphicsPromise = teamAthletes.map(
         async ({ geometry, attributes }) => {
           const polyline = new Polyline({
             paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
@@ -253,7 +315,7 @@ export function TeamPanel({
     return () => {
       isUpdating = true;
     };
-  }, [athletes, playerLineLayer, team]);
+  }, [teamAthletes, playerLineLayer, team]);
 
   const [sort, setSort] = useState(sortingFields[0]);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -261,7 +323,7 @@ export function TeamPanel({
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   const sortedAthletes = useGroupSort(
-    athletes?.map((a) => a.attributes),
+    teamAthletes?.map((a) => a.attributes) ?? regionAthletes ?? [],
     sort,
     sortDirection
   );
@@ -280,7 +342,7 @@ export function TeamPanel({
     <div className="bg-foreground-2 h-full">
       {/* <AthleteHover mapView={mapView} athletesLayer={athletesLayer} /> */}
       <CalciteTabs layout="center" className="h-full">
-        {mode !== 'Athletes' && (
+        {!showAthletes && (
           <CalciteTabNav slot="title-group">
             {TABS.map((tab, i) => (
               <CalciteTabTitle
@@ -289,7 +351,7 @@ export function TeamPanel({
                 tabIndex={i}
                 selected={mode === tab ? true : undefined}
                 onCalciteTabsActivate={(e) => {
-                  onModeChange(e.target.title as 'Teams' | 'Athletes');
+                  onModeChange(e.target.title as 'Teams' | 'Regions');
                 }}
               >
                 {tab}
@@ -298,7 +360,7 @@ export function TeamPanel({
           </CalciteTabNav>
         )}
         <div className="flex flex-col bg-foreground-2 w-[400px] h-full">
-          {mode === 'Athletes' && team && (
+          {showTeamAthletes && (
             <PanelHeader
               bgColor={team.attributes.color}
               onBackClick={() => onTeamSelect(undefined)}
@@ -308,7 +370,16 @@ export function TeamPanel({
             />
           )}
 
-          {mode === 'Regions' && (
+          {showRegionAthletes && (
+            <PanelHeader
+              onBackClick={() => setSelectedRegion(undefined)}
+              title={selectedRegion.label}
+              subtitle={null}
+              logo={selectedRegion.img}
+            />
+          )}
+
+          {showRegions && (
             <PanelHeader
               title="Players By"
               subtitle={
@@ -327,7 +398,7 @@ export function TeamPanel({
               logo={getLeagueLogoUrl(sport, { w: 500, h: 500 })}
             />
           )}
-          {mode === 'Teams' && (
+          {showTeams && (
             <PanelHeader
               title={teams?.[0].attributes.league ?? 'Teams'}
               subtitle="Teams"
@@ -335,7 +406,7 @@ export function TeamPanel({
             />
           )}
 
-          {mode === 'Athletes' && (
+          {showAthletes && (
             <div className="px-2 py-1 flex items-center justify-between">
               <CalciteActionBar layout="horizontal" expandDisabled>
                 <CalciteAction
@@ -365,8 +436,8 @@ export function TeamPanel({
           )}
 
           <ListContainer
-            loading={athletesLoading}
-            enabled={mode === 'Athletes'}
+            loading={showTeamAthletes ? athletesLoading : regionAthletesLoading}
+            enabled={showAthletes}
           >
             {sortedAthletes?.map(([groupLabel, athletes]) => (
               <Fragment key={groupLabel}>
@@ -394,10 +465,7 @@ export function TeamPanel({
             ))}
           </ListContainer>
 
-          <ListContainer
-            loading={teamQuery.isLoading}
-            enabled={mode === 'Teams'}
-          >
+          <ListContainer loading={teamQuery.isLoading} enabled={showTeams}>
             {teams
               ?.sort((a, b) =>
                 a.attributes.location.localeCompare(b.attributes.location)
@@ -411,11 +479,14 @@ export function TeamPanel({
               ))}
           </ListContainer>
 
-          <ListContainer loading={regionsLoading} enabled={mode === 'Regions'}>
+          <ListContainer loading={regionsLoading} enabled={showRegions}>
             {Regions?.map((region, i) => (
               <CalciteListItem
                 key={region[regionType] + i}
-                label={region[regionType]}
+                label={region.label}
+                onClick={() => {
+                  setSelectedRegion(region);
+                }}
               >
                 <div
                   slot="content-start"
@@ -432,7 +503,7 @@ export function TeamPanel({
                 </div>
                 <div slot="content" className="flex flex-col items-end">
                   <div className="flex items-center text-2 text-end">
-                    {region[regionType]}
+                    {region.label}
                   </div>
                   <div className="flex items-center text-n2 text-end">
                     <span>{region.count}</span>

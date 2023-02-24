@@ -26,9 +26,7 @@ export function App() {
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>();
 
-  const [panelMode, setPanelMode] = useState<'Teams' | 'Athletes' | 'Regions'>(
-    'Teams'
-  );
+  const [panelMode, setPanelMode] = useState<'Teams' | 'Regions'>('Teams');
 
   const {
     selected: selectedSport,
@@ -46,14 +44,6 @@ export function App() {
     selectedTeamId,
     selectedSport
   );
-
-  useEffect(() => {
-    if (selectedTeamId) {
-      setPanelMode('Athletes');
-    } else {
-      setPanelMode('Teams');
-    }
-  }, [selectedTeamId]);
 
   useEffect(() => {
     teamsLayer.visible = panelMode === 'Regions' ? false : true;
@@ -136,7 +126,6 @@ export function App() {
               }}
               sport={selectedSport}
               onTeamSelect={(team) => {
-                setPanelMode(team ? 'Athletes' : 'Teams');
                 setSelectedTeamId(team?.id.toString());
               }}
               mode={panelMode}
