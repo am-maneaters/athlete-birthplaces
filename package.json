@@ -2,7 +2,6 @@
   "name": "espn-athletes-viewer",
   "version": "1.0.0",
   "description": "Espn API Athletes Viewer",
-  "main": "index.js",
   "type": "module",
   "repository": {
     "type": "git",
@@ -12,7 +11,7 @@
     "dev": "vite",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && vite build",
-    "postinstall": "npx ncp node_modules/@esri/calcite-components/dist/calcite/assets/ public/assets/"
+    "postinstall": "ncp node_modules/@esri/calcite-components/dist/calcite/assets/ public/assets/"
   },
   "keywords": [],
   "devDependencies": {
@@ -24,6 +23,7 @@
     "@vitejs/plugin-react": "^3.1.0",
     "autoprefixer": "^10.4.13",
     "eslint-config-sem": "^1.0.6",
+    "ncp": "^2.0.0",
     "postcss": "^8.4.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
