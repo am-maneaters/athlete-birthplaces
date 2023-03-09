@@ -11,7 +11,7 @@
     "dev": "vite",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && vite build",
-    "postinstall": "ncp node_modules/@esri/calcite-components/dist/calcite/assets/ ../public/assets/"
+    "postinstall": "mkdir -p public/assets && cp -r node_modules/@esri/calcite-components/dist/calcite/assets/ public/assets/"
   },
   "keywords": [],
   "devDependencies": {
