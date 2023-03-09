@@ -11,7 +11,7 @@ import { App } from './App';
 import { setAssetPath } from '@esri/calcite-components/dist/components';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // CDN hosted assets
-setAssetPath('https://js.arcgis.com/calcite-components/1.0.3/assets');
+setAssetPath(window.location.href);
 
 // Create a root element for the application
 const root = createRoot(document.querySelector('#root')!);
