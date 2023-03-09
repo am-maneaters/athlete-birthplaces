@@ -78,7 +78,7 @@ export function useAthletesLayer(
 
   useEffect(() => {
     if (!selectedTeam) {
-      athletesLayer.featureEffect = undefined;
+      athletesLayer.featureEffect?.destroy();
       return;
     }
 

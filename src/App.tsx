@@ -46,9 +46,11 @@ export function App() {
   );
 
   useEffect(() => {
-    teamsLayer.visible = panelMode === 'Regions' ? false : true;
     if (panelMode === 'Regions') {
       setSelectedTeamId(undefined);
+      teamsLayer.visible = false;
+    } else {
+      teamsLayer.visible = true;
     }
   }, [panelMode, teamsLayer]);
 
@@ -73,7 +75,7 @@ export function App() {
 
   return (
     <div>
-      <CalciteShell className="calcite-theme-dark">
+      <CalciteShell className="calcite-mode-dark">
         <MapViewComponent
           mapProps={{
             basemap: new Basemap({

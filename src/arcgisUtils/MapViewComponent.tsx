@@ -6,8 +6,7 @@ import React, {
   HTMLAttributes,
   useState,
 } from 'react';
-import Map from '@arcgis/core/WebMap';
-import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import Map from '@arcgis/core/Map';
 
 export const MapContext = createContext<MapView | undefined>(new MapView());
 
@@ -17,14 +16,6 @@ type MapViewComponentProps = {
   mapViewProps: __esri.MapViewProperties;
   onMapViewLoad?: (map: MapView) => void;
 } & HTMLAttributes<HTMLDivElement>;
-
-export const ArcFeatureLayer = ({ layer }: { layer: FeatureLayer }) => {};
-
-export const ArcViewLayer = ({
-  children,
-}: {
-  children: React.ReactElement;
-}) => <div>{children}</div>;
 
 export default function MapViewComponent({
   children,

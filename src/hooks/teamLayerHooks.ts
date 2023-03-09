@@ -80,7 +80,7 @@ export function useTeamsLayer(
   useEffect(() => {
     if (!mapView || !selectedTeamId) {
       // Clear the feature effect
-      teamsLayer.featureEffect = undefined;
+      teamsLayer.featureEffect?.destroy();
       return;
     }
 

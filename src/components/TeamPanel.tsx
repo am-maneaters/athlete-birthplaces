@@ -25,7 +25,7 @@ import {
   useFeatureLayerView,
 } from '../arcgisUtils/useGraphicsLayer';
 import { array } from 'yup';
-import { athleteSchema } from '../schemas/athleteSchema';
+import { Athlete, athleteSchema } from '../schemas/athleteSchema';
 import { graphicSchema } from '../schemas/graphicSchema';
 
 import Polyline from '@arcgis/core/geometry/Polyline';
@@ -37,6 +37,8 @@ import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 import { getLuminance } from '../utils/colorUtils';
 import { replaceFeatures } from '../utils/layerUtils';
+import { useOnEvent } from '../arcgisUtils/useOnEvent';
+import { isGraphicsHit } from '../utils/esriUtils';
 
 const ListContainer = ({
   children,
@@ -102,7 +104,7 @@ type Region = {
   img: string;
   count: number;
   Country: string;
-  State: string;
+  State?: string;
   City: string;
   label: string;
 };
@@ -138,6 +140,38 @@ export function TeamPanel({
   const showTeams = mode === 'Teams' && !team;
   const showRegions = mode === 'Regions' && !selectedRegion;
 
+  useOnEvent(mapView, 'click', async (e) => {
+    const mapHit = await mapView?.hitTest(e, {
+      include: [athletesLayer],
+    });
+
+    if (!mapHit || mapHit.results.length === 0)
+      throw new Error('Could not get map hit');
+
+    const [firstHit] = mapHit.results;
+
+    if (isGraphicsHit(firstHit)) {
+      const { graphic } = firstHit;
+
+      if (!Object.hasOwn(graphic.attributes, 'id'))
+        throw new Error('Could not get team id');
+
+      const athlete = graphic.attributes as Athlete;
+
+      console.log(athlete);
+      onModeChange('Regions');
+      setRegionType('City');
+      setSelectedRegion({
+        img: getCountryFlag(athlete.birthCountry),
+        count: 1,
+        Country: athlete.birthCountry,
+        State: athlete.birthState ?? undefined,
+        City: athlete.birthCity,
+        label: athlete.birthCity,
+      });
+    }
+  });
+
   const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
   const { data: Regions, isLoading: regionsLoading } = useQuery({
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
@@ -169,16 +203,13 @@ export function TeamPanel({
         { signal }
       );
       return feats?.features
-        .filter((athlete) => {
-          console.log(athlete.attributes[fields[0]]);
-          return athlete.attributes[fields[0]];
-        })
+        .filter((athlete) => athlete.attributes[fields[0]])
         .map(
           ({ attributes }) =>
             ({
               img: getCountryFlag(attributes.birthCountry),
               Country: attributes.birthCountry,
-              State: attributes.birthState ?? attributes.birthCountry,
+              State: attributes.birthState ?? undefined,
               City: attributes.birthCity,
               count: attributes.countOFExpr,
               label: getStateName(attributes[fields[0]]),
@@ -187,26 +218,24 @@ export function TeamPanel({
     },
   });
 
-  const currentRegionName = useMemo(() => {
-    if (!selectedRegion) return '';
-    return selectedRegion[regionType];
-  }, [selectedRegion, regionType]);
-
   const { data: regionAthletes, isLoading: regionAthletesLoading } = useQuery({
-    queryKey: [
-      'regionAth',
-      sport,
-      athleteSchema,
-      currentRegionName,
-      regionType,
-    ],
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
+    queryKey: ['regionAth', sport, athleteSchema, regionType, selectedRegion],
     enabled: showRegionAthletes,
     queryFn: async ({ signal }) => {
+      if (!selectedRegion) return [];
+
+      const { State } = selectedRegion;
+
+      const currentRegionName = selectedRegion[regionType];
+
       const where =
         regionType === 'State'
           ? `type = '${sport}' AND birthState = '${currentRegionName}'`
           : regionType === 'City'
-          ? `type = '${sport}' AND birthCity = '${currentRegionName}'`
+          ? `type = '${sport}' AND birthCity = '${currentRegionName}'${
+              State ? ` AND birthState = '${State}'` : ''
+            }`
           : `type = '${sport}' AND birthCountry = '${currentRegionName}'`;
 
       const features = await athletesLayer?.queryFeatures(
@@ -229,7 +258,6 @@ export function TeamPanel({
     queryKey: ['relatedPlayers', team, sport, athleteSchema],
     enabled: showTeamAthletes,
     queryFn: async ({ signal }) => {
-      console.log(team);
       if (!team) return [];
 
       const features = await athletesLayerView?.queryFeatures(
