@@ -1,4 +1,4 @@
-# Athlete Birthplaces Explorer
+# [Athlete Birthplaces Explorer](https://athlete-birthplaces.netlify.app/)
 
 A simple app displaying the birthplaces of athletes for the NHL, NBA, NFL and MLB leagues. 
 
