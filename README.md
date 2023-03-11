@@ -5,7 +5,19 @@ A simple app displaying the birthplaces of athletes for the NHL, NBA, NFL and ML
 Purpose: utilize ArcGIS Maps SDK for JS, alongside Calcite Components and React to make an easy to use explorer app.
 
 goals:
-- provide access to 
+- explore the four most popular north american sports leagues geographically
+- explore the geographical distribution of franchises by league
+- detailed team views
+  - display logos on the map representing teams
+  - display lines on the map connecting the birthplaces of players to the selected team
+  - explore a list of players for the selected team and their common attributes/headshots
+- detailed country/state/city views
+  - display dots on the map representing players
+  - ***TODO***: display lines from the city to franchise locations?
+  - explore distribution of players by multiple geographic granularities
+  - explore a list of players by birth geography
+  - ***TODO***: highlight the distribution of a players team at a location
+    - i.e. 6 players born in minneapolis, 3 of them are on the bruins, so minneapolis is 50% bruins
 
 Technologies used:
 - [yup](https://github.com/jquense/yup)
@@ -30,6 +42,8 @@ Technologies used:
   - love the way the ui looks, but the developer experience (especially with the react wrapper components) leaves much to be desired
 - [vite](https://vitejs.dev)
   - can never go back to webpack after vite
+- [react](https://reactjs.org)
+  - i love hooks, what can i say
 - [arcgis online](https://www.arcgis.com/index.html)
   - used for hosting data and geocoding services
   
