@@ -2,6 +2,14 @@
 
 A simple app displaying the birthplaces of athletes for the NHL, NBA, NFL and MLB leagues. 
 
+<div style="display: flex">
+<img width="500px" alt="image" src="https://user-images.githubusercontent.com/50883428/224496808-68cac804-8e0f-4719-b1cc-78b492f8387f.png">
+<img width="500px" alt="image" src="https://user-images.githubusercontent.com/50883428/224496858-533b03e2-b369-4745-978a-650e403f56ac.png">
+<img width="500px" alt="image" src="https://user-images.githubusercontent.com/50883428/224496982-c1c8bc2f-8cab-4e0f-bf85-6d578e21215e.png">
+<img width="500px" alt="image" src="https://user-images.githubusercontent.com/50883428/224497012-336f57bf-1b3c-4df0-9e4b-bc31bc1e2443.png">
+</div>
+
+
 Purpose: utilize ArcGIS Maps SDK for JS, alongside Calcite Components and React to make an easy to use explorer app.
 
 goals:
