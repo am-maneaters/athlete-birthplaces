@@ -16,7 +16,7 @@ import { PointGraphic } from '../typings/AthleteTypes';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 
 const nhlPlayersLayerUrl =
-  'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_API_Athletes/FeatureServer/0';
+  'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/BigFourAthletes_March23/FeatureServer/0';
 
 export function useAthletesLayer(
   mapView: __esri.MapView | undefined,
@@ -78,7 +78,8 @@ export function useAthletesLayer(
 
   useEffect(() => {
     if (!selectedTeam) {
-      athletesLayer.featureEffect?.destroy();
+      // @ts-expect-error - maps sdk types are wrong
+      athletesLayer.featureEffect = undefined;
       return;
     }
 

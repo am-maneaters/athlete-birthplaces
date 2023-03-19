@@ -80,7 +80,8 @@ export function useTeamsLayer(
   useEffect(() => {
     if (!mapView || !selectedTeamId) {
       // Clear the feature effect
-      teamsLayer.featureEffect?.destroy();
+      // @ts-expect-error - maps sdk types are wrong
+      teamsLayer.featureEffect = undefined;
       return;
     }
 

@@ -18,7 +18,6 @@ import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 import { ListSorter } from './ListSorter';
 import { PanelHeader } from './PanelHeader';
 import { SortField, useGroupSort } from '../hooks/useGroupSort';
-import { getStateName } from '../data/statesLookup';
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import {
   useFeatureLayer,
@@ -30,7 +29,6 @@ import { graphicSchema } from '../schemas/graphicSchema';
 
 import Polyline from '@arcgis/core/geometry/Polyline';
 
-import countryCodes from '../data/countryCodes.json';
 import Color from '@arcgis/core/Color';
 import Graphic from '@arcgis/core/Graphic';
 import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
@@ -60,14 +58,15 @@ const ListContainer = ({
 
 const sortingFields: SortField[] = [
   {
+    field: 'birthCountry',
+    label: 'Country',
+    group: true,
+  },
+  {
     field: 'birthState',
     altField: 'birthCountry',
-    label: 'Birthplace',
     group: true,
-    transform: (val) => {
-      if (typeof val !== 'string') return val.toString();
-      return getStateName(val);
-    },
+    label: 'State',
   },
   { field: 'lastName', label: 'Last Name' },
   { field: 'weight', label: 'Weight' },
@@ -90,15 +89,10 @@ type TeamPanelProps = {
 
 const TABS = ['Teams', 'Regions'] as const;
 
-const getCountryFlag = (country: string) => {
-  const code = countryCodes.find(
-    (c) => c.name.toLowerCase() === country.toLowerCase()
-  );
-
-  return code
-    ? `https://flagcdn.com/144x108/${code.code.toLowerCase()}.png`
+const getCountryFlag = (country: string) =>
+  country
+    ? `https://flagcdn.com/144x108/${country.toLowerCase()}.png`
     : country;
-};
 
 type Region = {
   img: string;
@@ -158,11 +152,10 @@ export function TeamPanel({
 
       const athlete = graphic.attributes as Athlete;
 
-      console.log(athlete);
       onModeChange('Regions');
       setRegionType('City');
       setSelectedRegion({
-        img: getCountryFlag(athlete.birthCountry),
+        img: getCountryFlag(athlete.country2Code),
         count: 1,
         Country: athlete.birthCountry,
         State: athlete.birthState ?? undefined,
@@ -179,9 +172,9 @@ export function TeamPanel({
     enabled: showRegions,
     queryFn: async ({ signal }) => {
       const regionFields = {
-        City: ['birthCity', 'birthState', 'birthCountry'],
-        State: ['birthState', 'birthCountry'],
-        Country: ['birthCountry'],
+        City: ['birthCity', 'birthState', 'birthCountry', 'country2Code'],
+        State: ['birthState', 'birthCountry', 'country2Code'],
+        Country: ['birthCountry', 'country2Code'],
       };
 
       const fields = regionFields[regionType];
@@ -207,12 +200,12 @@ export function TeamPanel({
         .map(
           ({ attributes }) =>
             ({
-              img: getCountryFlag(attributes.birthCountry),
+              img: getCountryFlag(attributes.country2Code),
               Country: attributes.birthCountry,
               State: attributes.birthState ?? undefined,
               City: attributes.birthCity,
               count: attributes.countOFExpr,
-              label: getStateName(attributes[fields[0]]),
+              label: attributes[fields[0]],
             } satisfies Region)
         );
     },
@@ -387,6 +380,7 @@ export function TeamPanel({
             ))}
           </CalciteTabNav>
         )}
+
         <div className="flex flex-col bg-foreground-2 w-[400px] h-full">
           {showTeamAthletes && (
             <PanelHeader
