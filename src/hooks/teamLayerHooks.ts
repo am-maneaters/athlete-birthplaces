@@ -16,6 +16,7 @@ import {
 import { Team, teamSchema } from '../schemas/teamSchema';
 import { graphicSchema } from '../schemas/graphicSchema';
 import { PointGraphic } from '../typings/AthleteTypes';
+import { getTeamLogoUrl } from '../utils/imageUtils';
 
 const nhlTeamsLayerUrl =
   'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_Big_Four_Teams/FeatureServer/0';
@@ -118,11 +119,11 @@ export function useTeamsLayer(
     if (!teamFeatures || !teamsLayer) return;
 
     teamsLayer.renderer = new UniqueValueRenderer({
-      field: 'logo',
+      field: 'name',
       uniqueValueInfos: teamFeatures.map(({ attributes }) => ({
-        value: attributes?.logo,
+        value: attributes.name,
         symbol: new PictureMarkerSymbol({
-          url: attributes?.logo,
+          url: getTeamLogoUrl(attributes.abbreviation, attributes.league),
           width: '48px',
           height: '48px',
         }),

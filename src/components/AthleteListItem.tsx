@@ -43,7 +43,7 @@ export const AthleteListItem = ({
           src={teamLogoUrl}
           alt="Team Logo"
           height="100px"
-          className="opacity-20 scale-125 ml-2"
+          className="opacity-20 scale-125 ml-0"
           loading="lazy"
         />
         {showImage && (

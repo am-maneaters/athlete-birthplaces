@@ -28,21 +28,17 @@ export function App() {
 
   const [panelMode, setPanelMode] = useState<'Teams' | 'Regions'>('Teams');
 
-  const {
-    selected: selectedSport,
-    handleSelectionChange,
-    itemProps,
-  } = useSegmentedControl<Sport>(Sport.Hockey);
+  const [sport, setSport] = useState(Sport.Hockey);
 
   useEffect(() => {
     // setSelectedPlayerId(undefined);
     setSelectedTeamId(undefined);
-  }, [selectedSport]);
+  }, [sport]);
 
   const { teamsLayer, teamQuery } = useTeamsLayer(
     mapView,
     selectedTeamId,
-    selectedSport
+    sport
   );
 
   useEffect(() => {
@@ -104,19 +100,7 @@ export function App() {
           }}
           style={{ height: '100vh' }}
         />
-        <div className="absolute inset-4 flex justify-between items-start pointer-events-none [&>*]:pointer-events-auto ">
-          <div>
-            <CalciteSegmentedControl
-              onCalciteSegmentedControlChange={handleSelectionChange}
-            >
-              {Object.values(Sport).map((sport) => (
-                <CalciteSegmentedControlItem
-                  key={sport}
-                  {...itemProps(sport as Sport, sport)}
-                />
-              ))}
-            </CalciteSegmentedControl>
-          </div>
+        <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
           {mapView && (
             <TeamPanel
               mapView={mapView}
@@ -126,12 +110,13 @@ export function App() {
                 // setPanelMode('Athletes');
                 setSelectedPlayerId(athleteId);
               }}
-              sport={selectedSport}
+              sport={sport}
               onTeamSelect={(team) => {
                 setSelectedTeamId(team?.id.toString());
               }}
               mode={panelMode}
               onModeChange={setPanelMode}
+              onSportChange={setSport}
             />
           )}
         </div>

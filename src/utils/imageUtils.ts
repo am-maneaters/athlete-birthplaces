@@ -31,8 +31,12 @@ export const getAthleteHeadshotUrl = (
 ) =>
   `https://a.espncdn.com/combiner/i?img=/i/headshots/${leagueLookup[sport]}/players/full/${athleteId}.png&h=${h}&w=${w}&scale=crop`;
 
-export const getLeagueLogoUrl = (
-  sport: Sport,
-  { h = 100, w = 100, transparent = true }: ImageOptions
-) =>
-  `https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/${leagueLookup[sport]}.png?w=${w}&h=${h}&transparent=${transparent}`;
+export const getLeagueLogoUrl = (sport: Sport) =>
+  new URL(`../images/leagueLogos/${leagueLookup[sport]}.png`, import.meta.url)
+    .href;
+
+export const getTeamLogoUrl = (teamAbbreviation: string, league: string) =>
+  new URL(
+    `../images/${league.toLowerCase()}/${teamAbbreviation.toLowerCase()}.png`,
+    import.meta.url
+  ).href;

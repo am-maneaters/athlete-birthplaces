@@ -7,12 +7,16 @@ import {
   CalciteTabNav,
   CalciteTabTitle,
   CalciteLoader,
+  CalciteButton,
+  CalciteDropdown,
+  CalciteDropdownGroup,
+  CalciteDropdownItem,
 } from '@esri/calcite-components-react';
 import { AthleteListItem } from './AthleteListItem';
 import { Team } from '../schemas/teamSchema';
 import { PointGraphic } from '../typings/AthleteTypes';
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { Sport, getLeagueLogoUrl } from '../utils/imageUtils';
+import { Sport, getLeagueLogoUrl, getTeamLogoUrl } from '../utils/imageUtils';
 import { TeamListItem } from './TeamListItem';
 import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 import { ListSorter } from './ListSorter';
@@ -85,6 +89,7 @@ type TeamPanelProps = {
   onTeamSelect: (team: Team | undefined) => void;
   mode: 'Teams' | 'Regions';
   onModeChange: (mode: 'Teams' | 'Regions') => void;
+  onSportChange: (sport: Sport) => void;
 };
 
 const TABS = ['Teams', 'Regions'] as const;
@@ -112,6 +117,7 @@ export function TeamPanel({
   onTeamSelect,
   mode,
   onModeChange,
+  onSportChange,
 }: TeamPanelProps) {
   const [regionType, setRegionType] = useState<'State' | 'Country' | 'City'>(
     'Country'
@@ -388,7 +394,10 @@ export function TeamPanel({
               onBackClick={() => onTeamSelect(undefined)}
               title={team.attributes.location}
               subtitle={team.attributes.name}
-              logo={team.attributes.logo}
+              logo={getTeamLogoUrl(
+                team.attributes.abbreviation,
+                team.attributes.league
+              )}
             />
           )}
 
@@ -417,14 +426,27 @@ export function TeamPanel({
                   <option>City</option>
                 </select>
               }
-              logo={getLeagueLogoUrl(sport, { w: 500, h: 500 })}
+              logo={getLeagueLogoUrl(sport)}
             />
           )}
           {showTeams && (
             <PanelHeader
-              title={teams?.[0].attributes.league ?? 'Teams'}
+              title={
+                <select
+                  className="text-3 pt-1 uppercase bg-transparent"
+                  onChange={(e) => {
+                    onSportChange(e.target.value as Sport);
+                  }}
+                  value={sport}
+                >
+                  <option value={Sport.Hockey}>NHL</option>
+                  <option value={Sport.Football}>NFL</option>
+                  <option value={Sport.Basketball}>NBA</option>
+                  <option value={Sport.Baseball}>MLB</option>
+                </select>
+              }
               subtitle="Teams"
-              logo={getLeagueLogoUrl(sport, { w: 500, h: 500 })}
+              logo={getLeagueLogoUrl(sport)}
             />
           )}
 
@@ -474,15 +496,22 @@ export function TeamPanel({
                   />
                 )}
 
-                {athletes.map((athlete) => (
-                  <AthleteListItem
-                    key={`${athlete.type}-${athlete.id}`}
-                    mode={viewMode}
-                    athlete={athlete}
-                    teamLogoUrl={teamsById?.[athlete.teamId]?.logo}
-                    onClick={() => onAthleteSelect(athlete.id.toString())}
-                  />
-                ))}
+                {athletes.map((athlete) => {
+                  const team = teamsById?.[athlete.teamId];
+                  return (
+                    <AthleteListItem
+                      key={`${athlete.type}-${athlete.id}`}
+                      mode={viewMode}
+                      athlete={athlete}
+                      teamLogoUrl={
+                        team
+                          ? getTeamLogoUrl(team.abbreviation, team.league)
+                          : undefined
+                      }
+                      onClick={() => onAthleteSelect(athlete.id.toString())}
+                    />
+                  );
+                })}
               </Fragment>
             ))}
           </ListContainer>

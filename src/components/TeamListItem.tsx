@@ -1,5 +1,6 @@
 import { CalciteListItem } from '@esri/calcite-components-react';
 import { Team } from '../schemas/teamSchema';
+import { getTeamLogoUrl } from '../utils/imageUtils';
 
 export function TeamListItem({
   team,
@@ -15,7 +16,7 @@ export function TeamListItem({
         className="flex relative overflow-y-clip w-[100px] h-[100px] content-center"
       >
         <img
-          src={team.logo}
+          src={getTeamLogoUrl(team.abbreviation, team.league)}
           alt="Team Logo"
           height="100px"
           width="140px"
@@ -23,7 +24,9 @@ export function TeamListItem({
         />
       </div>
       <div slot="content" className="flex flex-col items-end">
-        <div className="flex items-center text-2 text-end">{team.displayName}</div>
+        <div className="flex items-center text-2 text-end">
+          {team.displayName}
+        </div>
         <div className="flex items-center text-n2 text-end">
           <span>{team.venueAddress}</span>
         </div>
