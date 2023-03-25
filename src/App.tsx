@@ -2,18 +2,13 @@ import MapViewComponent from './arcgisUtils/MapViewComponent';
 
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 
-import {
-  CalciteSegmentedControl,
-  CalciteSegmentedControlItem,
-  CalciteShell,
-} from '@esri/calcite-components-react';
+import { CalciteShell } from '@esri/calcite-components-react';
 
 import { useEffect, useState } from 'react';
 import MapView from '@arcgis/core/views/MapView';
 import { isGraphicsHit } from './utils/esriUtils';
 
 import Basemap from '@arcgis/core/Basemap';
-import { useSegmentedControl } from './hooks/calciteHooks';
 import { useOnEvent } from './arcgisUtils/useOnEvent';
 import { TeamPanel } from './components/TeamPanel';
 import { useTeamsLayer } from './hooks/teamLayerHooks';
@@ -100,6 +95,7 @@ export function App() {
           }}
           style={{ height: '100vh' }}
         />
+
         <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
           {mapView && (
             <TeamPanel

@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { CalciteListItem } from '@esri/calcite-components-react';
-import { Athlete } from '../schemas/athleteSchema';
-import { Sport, getAthleteHeadshotUrl } from '../utils/imageUtils';
+import { Athlete } from '../../schemas/athleteSchema';
+import { Sport, getAthleteHeadshotUrl } from '../../utils/imageUtils';
 
 export interface AthleteListItemProps {
   athlete: Athlete;

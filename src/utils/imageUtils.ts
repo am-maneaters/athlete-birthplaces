@@ -40,3 +40,7 @@ export const getTeamLogoUrl = (teamAbbreviation: string, league: string) =>
     `../images/${league.toLowerCase()}/${teamAbbreviation.toLowerCase()}.png`,
     import.meta.url
   ).href;
+
+export const getCountryFlagUrl = (countryCode: string) =>
+  new URL(`../images/flags/${countryCode.toLowerCase()}.png`, import.meta.url)
+    .href;

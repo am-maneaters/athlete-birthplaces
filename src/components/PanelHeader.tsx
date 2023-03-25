@@ -5,7 +5,7 @@ type Props = {
   bgColor?: string;
   onBackClick?: () => void;
   logo: string;
-  title: string;
+  title: React.ReactNode;
   subtitle: React.ReactNode;
 };
 

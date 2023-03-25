@@ -10,21 +10,6 @@ import React, {
 
 const MapContext = createContext<MapView | undefined>(undefined);
 
-type Props = {
-  children: React.ReactNode;
-  viewProps?: __esri.MapViewProperties;
-};
-
-export const ArcReactClient: React.FC<Props> = ({ children, viewProps }) => {
-  const mapView = useRef(new MapView(viewProps));
-
-  return (
-    <MapContext.Provider value={mapView.current}>
-      {children}
-    </MapContext.Provider>
-  );
-};
-
 export const useMapView = () => {
   const mapView = React.useContext(MapContext);
   if (mapView === undefined) {
