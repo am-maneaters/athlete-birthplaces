@@ -6,10 +6,8 @@ import { CalciteShell } from '@esri/calcite-components-react';
 
 import { useEffect, useState } from 'react';
 import MapView from '@arcgis/core/views/MapView';
-import { isGraphicsHit } from './utils/esriUtils';
 
 import Basemap from '@arcgis/core/Basemap';
-import { useOnEvent } from './arcgisUtils/useOnEvent';
 import { TeamPanel } from './components/TeamPanel';
 import { useTeamsLayer } from './hooks/teamLayerHooks';
 import { Sport } from './utils/imageUtils';
@@ -44,25 +42,6 @@ export function App() {
       teamsLayer.visible = true;
     }
   }, [panelMode, teamsLayer]);
-
-  useOnEvent(mapView, 'click', async (e) => {
-    const mapHit = await mapView?.hitTest(e, {
-      include: [teamsLayer],
-    });
-
-    if (!mapHit || mapHit.results.length === 0)
-      return setSelectedTeamId(undefined);
-
-    const [firstHit] = mapHit.results;
-
-    if (isGraphicsHit(firstHit)) {
-      const { graphic } = firstHit;
-
-      if (!Object.hasOwn(graphic.attributes, 'id'))
-        throw new Error('Could not get team id');
-      setSelectedTeamId(graphic.attributes.id);
-    }
-  });
 
   return (
     <div>
@@ -107,12 +86,13 @@ export function App() {
                 setSelectedPlayerId(athleteId);
               }}
               sport={sport}
-              onTeamSelect={(team) => {
-                setSelectedTeamId(team?.id.toString());
+              onTeamSelect={(teamId) => {
+                setSelectedTeamId(teamId?.toString());
               }}
               mode={panelMode}
               onModeChange={setPanelMode}
               onSportChange={setSport}
+              teamsLayer={teamsLayer}
             />
           )}
         </div>

@@ -32,10 +32,11 @@ type TeamPanelProps = {
   onAthleteSelect: (athlete: string) => void;
   teamQuery: UseQueryResult<PointGraphic<Team>[]>;
   sport: Sport;
-  onTeamSelect: (team: Team | undefined) => void;
+  onTeamSelect: (team: number | undefined) => void;
   mode: 'Teams' | 'Regions';
   onModeChange: (mode: 'Teams' | 'Regions') => void;
   onSportChange: (sport: Sport) => void;
+  teamsLayer: __esri.FeatureLayer;
 };
 
 const TABS = ['Teams', 'Regions'] as const;
@@ -50,6 +51,7 @@ export function TeamPanel({
   mode,
   onModeChange,
   onSportChange,
+  teamsLayer,
 }: TeamPanelProps) {
   const [regionType, setRegionType] = useState<'State' | 'Country' | 'City'>(
     'Country'
@@ -73,8 +75,30 @@ export function TeamPanel({
   const showRegions = mode === 'Regions' && !selectedRegion;
 
   useOnEvent(mapView, 'click', async (e) => {
+    if (!mapView) return;
+
+    if (mode === 'Teams') {
+      const teamsMapHit = await mapView.hitTest(e, {
+        include: [teamsLayer],
+      });
+
+      if (!teamsMapHit || teamsMapHit.results.length === 0)
+        return onTeamSelect(undefined);
+
+      const [firstHit] = teamsMapHit.results;
+
+      if (isGraphicsHit(firstHit)) {
+        const { graphic } = firstHit;
+
+        if (!Object.hasOwn(graphic.attributes, 'id'))
+          throw new Error('Could not get team id');
+        onTeamSelect(graphic.attributes.id);
+      }
+      return;
+    }
+
     const mapHit = await mapView?.hitTest(e, {
-      include: [athletesLayer],
+      include: [athletesLayer, teamsLayer],
     });
 
     if (!mapHit || mapHit.results.length === 0)
@@ -220,7 +244,7 @@ export function TeamPanel({
                   <TeamListItem
                     key={team.attributes.id}
                     team={team.attributes}
-                    onClick={onTeamSelect}
+                    onClick={() => onTeamSelect(team.attributes.id)}
                   />
                 ))}
             </ListContainer>

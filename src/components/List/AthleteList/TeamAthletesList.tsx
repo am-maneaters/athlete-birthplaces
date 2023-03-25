@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { AthleteList } from './AthleteList';
 import { Team } from '../../../schemas/teamSchema';
 import { Athlete, athleteSchema } from '../../../schemas/athleteSchema';
@@ -17,6 +17,7 @@ import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 import { getLuminance } from '../../../utils/colorUtils';
 import { replaceFeatures } from '../../../utils/layerUtils';
+import { distance } from '@arcgis/core/geometry/geometryEngine';
 
 type Props = {
   onAthleteSelect: (athlete: string) => void;
@@ -30,7 +31,6 @@ type Props = {
 export default function TeamAthletesList({
   onAthleteSelect,
   teams,
-
   team,
   sport,
   mapView,
@@ -131,12 +131,31 @@ export default function TeamAthletesList({
     };
   }, [teamAthletes, playerLineLayer, team]);
 
+  // const averageDistance = useMemo(() => {
+  //   if (!teamAthletes || !team) return;
+
+  //   const distances = teamAthletes.map((athlete) =>
+  //     distance(
+  //       athlete.geometry as __esri.Point,
+  //       team.geometry as __esri.Point,
+  //       'miles'
+  //     )
+  //   );
+
+  //   const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
+
+  //   return avgDistance.toFixed(0);
+  // }, [teamAthletes, team]);
+
   return (
-    <AthleteList
-      loading={athletesLoading}
-      athletes={teamAthletes?.map((athlete) => athlete.attributes)}
-      onAthleteSelect={onAthleteSelect}
-      teams={teams}
-    />
+    <>
+      {/* {averageDistance} */}
+      <AthleteList
+        loading={athletesLoading}
+        athletes={teamAthletes?.map((athlete) => athlete.attributes)}
+        onAthleteSelect={onAthleteSelect}
+        teams={teams}
+      />
+    </>
   );
 }
