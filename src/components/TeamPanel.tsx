@@ -1,6 +1,4 @@
 import {
-  CalciteActionBar,
-  CalciteAction,
   CalciteTabs,
   CalciteTabNav,
   CalciteTabTitle,
@@ -16,9 +14,7 @@ import {
 } from '../utils/imageUtils';
 import { TeamListItem } from './ListItem/TeamListItem';
 import { useAthletesLayer } from '../hooks/athleteLayerHooks';
-import { ListSorter } from './ListSorter';
 import { PanelHeader } from './PanelHeader';
-import { SortField } from '../hooks/useGroupSort';
 import { UseQueryResult } from '@tanstack/react-query';
 import { Athlete } from '../schemas/athleteSchema';
 
