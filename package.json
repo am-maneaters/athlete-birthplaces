@@ -19,10 +19,10 @@
     "autoprefixer": "^10.4.14",
     "eslint-config-sem": "https://github.com/samMatenaer/eslint-config-sem",
     "ncp": "^2.0.0",
-    "postcss": "^8.4.21",
+    "postcss": "^8.4.26",
     "rollup-plugin-copy": "^3.4.0",
-    "tailwindcss": "^3.2.7",
-    "typescript": "^5.0.2",
+    "tailwindcss": "^3.3.3",
+    "typescript": "^5.1.6",
     "vite": "^4.4.4"
   },
   "author": "Sam Matenaer",
@@ -40,6 +40,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "use-deep-compare-effect": "^1.8.1",
-    "yup": "^1.0.2"
+    "yup": "^1.2.0"
   }
 }
