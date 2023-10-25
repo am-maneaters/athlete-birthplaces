@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { AthleteList } from './AthleteList';
 import { Team } from '../../../schemas/teamSchema';
 import { Athlete, athleteSchema } from '../../../schemas/athleteSchema';
@@ -7,8 +7,8 @@ import { array } from 'yup';
 import { graphicSchema } from '../../../schemas/graphicSchema';
 import { PointGraphic } from '../../../typings/AthleteTypes';
 import {
+  useCsvLayerView,
   useFeatureLayer,
-  useFeatureLayerView,
 } from '../../../arcgisUtils/useGraphicsLayer';
 import Color from '@arcgis/core/Color';
 import Graphic from '@arcgis/core/Graphic';
@@ -17,7 +17,6 @@ import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 import { getLuminance } from '../../../utils/colorUtils';
 import { replaceFeatures } from '../../../utils/layerUtils';
-import { distance } from '@arcgis/core/geometry/geometryEngine';
 
 type Props = {
   onAthleteSelect: (athlete: string) => void;
@@ -25,7 +24,7 @@ type Props = {
   team: PointGraphic<Team>;
   sport: string;
   mapView: __esri.MapView;
-  athletesLayer: __esri.FeatureLayer;
+  athletesLayer: __esri.CSVLayer;
 };
 
 export default function TeamAthletesList({
@@ -36,7 +35,7 @@ export default function TeamAthletesList({
   mapView,
   athletesLayer,
 }: Props) {
-  const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
+  const athletesLayerView = useCsvLayerView(mapView, athletesLayer);
   const playerLineLayer = useFeatureLayer(mapView, {
     title: 'Player Lines',
     source: [],
@@ -67,10 +66,11 @@ export default function TeamAthletesList({
       if (!team) return [];
 
       if (!athletesLayerView) throw new Error('Athletes layer not loaded');
-
-      const features = await athletesLayerView?.queryFeatures(
+      const features = await (
+        athletesLayerView.layer as __esri.CSVLayer
+      ).queryFeatures(
         {
-          where: `type = '${sport}' AND teamId = ${team?.attributes.id}`,
+          where: `type = '${sport}' AND teamId = '${team?.attributes.id}'`,
           outFields: ['*'],
           returnGeometry: true,
         },

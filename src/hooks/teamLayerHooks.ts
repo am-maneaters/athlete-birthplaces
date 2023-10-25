@@ -11,23 +11,21 @@ import Point from '@arcgis/core/geometry/Point';
 import { array } from 'yup';
 import {
   useFeatureLayer,
-  useFeatureLayerView,
+  useGeoJSONLayer,
+  useGeoJsonLayerView,
 } from '../arcgisUtils/useGraphicsLayer';
 import { Team, teamSchema } from '../schemas/teamSchema';
 import { graphicSchema } from '../schemas/graphicSchema';
 import { PointGraphic } from '../typings/AthleteTypes';
 import { getTeamLogoUrl } from '../utils/imageUtils';
 
-const nhlTeamsLayerUrl =
-  'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_Big_Four_Teams/FeatureServer/0';
-
 export function useTeamsLayer(
   mapView: __esri.MapView | undefined,
   selectedTeamId: string | undefined,
   selectedSport: string
 ) {
-  const baseTeamLayer = useFeatureLayer(mapView, {
-    url: nhlTeamsLayerUrl,
+  const baseTeamLayer = useGeoJSONLayer(mapView, {
+    url: new URL('combined_teams.geojson', import.meta.url).href,
     title: 'NHL Teams',
     outFields: ['*'],
     visible: false,
@@ -65,7 +63,7 @@ export function useTeamsLayer(
     ],
   });
 
-  const teamsView = useFeatureLayerView(mapView, baseTeamLayer);
+  const teamsView = useGeoJsonLayerView(mapView, baseTeamLayer);
 
   useEffect(() => {
     if (!mapView || !teamsView) return;

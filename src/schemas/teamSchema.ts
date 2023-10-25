@@ -16,7 +16,6 @@ export const teamSchema = object().shape({
   alternateColor: string()
     .required()
     .transform((value) => `#${value}`),
-  isActive: boolean().required(),
 
   logo: string().required(),
   athletesUrl: string().required().url(),

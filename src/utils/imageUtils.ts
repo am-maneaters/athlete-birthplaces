@@ -24,12 +24,11 @@ type ImageOptions = {
   transparent?: boolean;
 };
 
-export const getAthleteHeadshotUrl = (
-  athleteId: number,
-  sport: Sport,
-  { h = 100, w = 100 }: ImageOptions
-) =>
-  `https://a.espncdn.com/combiner/i?img=/i/headshots/${leagueLookup[sport]}/players/full/${athleteId}.png&h=${h}&w=${w}&scale=crop`;
+export const getAthleteHeadshotUrl = (athleteId: number, league: string) =>
+  new URL(
+    `../images/players/${league.toLowerCase()}/${athleteId}.webp`,
+    import.meta.url
+  ).href;
 
 export const getLeagueLogoUrl = (sport: Sport) =>
   new URL(`../images/leagueLogos/${leagueLookup[sport]}.png`, import.meta.url)

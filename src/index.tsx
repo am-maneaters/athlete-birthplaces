@@ -9,6 +9,7 @@ import { App } from './App';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { defineCustomElements } from '@esri/calcite-components/dist/loader';
+import { SupabaseProvider } from './contexts/SupabaseContext';
 // CDN hosted assets
 defineCustomElements(window);
 
@@ -21,10 +22,12 @@ const queryClient = new QueryClient({
 // Render the application
 root.render(
   <StrictMode>
-    <MapStateProvider>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </MapStateProvider>
+    <SupabaseProvider>
+      <MapStateProvider>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </MapStateProvider>
+    </SupabaseProvider>
   </StrictMode>
 );

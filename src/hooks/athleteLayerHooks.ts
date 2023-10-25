@@ -6,8 +6,9 @@ import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
 import FeatureFilter from '@arcgis/core/layers/support/FeatureFilter';
 
 import {
-  useFeatureLayer,
-  useFeatureLayerView,
+  useCsvLayer,
+  useGeoJSONLayer,
+  useGeoJsonLayerView,
 } from '../arcgisUtils/useGraphicsLayer';
 import { Team } from '../schemas/teamSchema';
 
@@ -15,16 +16,13 @@ import { PointGraphic } from '../typings/AthleteTypes';
 
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 
-const nhlPlayersLayerUrl =
-  'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/BigFourAthletes_March23/FeatureServer/0';
-
 export function useAthletesLayer(
   mapView: __esri.MapView | undefined,
   selectedTeam: PointGraphic<Team> | undefined,
   selectedSport: string
 ) {
-  const athletesLayer = useFeatureLayer(mapView, {
-    url: nhlPlayersLayerUrl,
+  const athletesLayer = useGeoJSONLayer(mapView, {
+    url: new URL('combined.geojson', import.meta.url).href,
     title: 'NHL Players',
     outFields: ['*'],
     labelingInfo: [
@@ -64,7 +62,7 @@ export function useAthletesLayer(
     });
   }, [athletesLayer]);
 
-  const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
+  const athletesLayerView = useGeoJsonLayerView(mapView, athletesLayer);
 
   useEffect(() => {
     if (!mapView || !athletesLayerView) return;
