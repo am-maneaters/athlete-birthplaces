@@ -1,14 +1,10 @@
 import React, { useEffect } from 'react';
 import { AthleteList } from './AthleteList';
-import { Team } from '../../../schemas/teamSchema';
-import { Athlete, athleteSchema } from '../../../schemas/athleteSchema';
 import { useQuery } from '@tanstack/react-query';
-import { array } from 'yup';
-import { graphicSchema } from '../../../schemas/graphicSchema';
 import { PointGraphic } from '../../../typings/AthleteTypes';
 import {
-  useCsvLayerView,
   useFeatureLayer,
+  useFeatureLayerView,
 } from '../../../arcgisUtils/useGraphicsLayer';
 import Color from '@arcgis/core/Color';
 import Graphic from '@arcgis/core/Graphic';
@@ -17,6 +13,7 @@ import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 import { getLuminance } from '../../../utils/colorUtils';
 import { replaceFeatures } from '../../../utils/layerUtils';
+import { Athlete, Team } from '../../../types';
 
 type Props = {
   onAthleteSelect: (athlete: string) => void;
@@ -24,7 +21,7 @@ type Props = {
   team: PointGraphic<Team>;
   sport: string;
   mapView: __esri.MapView;
-  athletesLayer: __esri.CSVLayer;
+  athletesLayer: __esri.FeatureLayer;
 };
 
 export default function TeamAthletesList({
@@ -35,7 +32,7 @@ export default function TeamAthletesList({
   mapView,
   athletesLayer,
 }: Props) {
-  const athletesLayerView = useCsvLayerView(mapView, athletesLayer);
+  const athletesLayerView = useFeatureLayerView(mapView, athletesLayer);
   const playerLineLayer = useFeatureLayer(mapView, {
     title: 'Player Lines',
     source: [],
@@ -60,17 +57,16 @@ export default function TeamAthletesList({
 
   const { data: teamAthletes, isLoading: athletesLoading } = useQuery({
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryKey: ['relatedPlayers', team, sport, athleteSchema],
+    queryKey: ['relatedPlayers', team, sport],
     enabled: !!athletesLayerView,
     queryFn: async ({ signal }) => {
       if (!team) return [];
 
       if (!athletesLayerView) throw new Error('Athletes layer not loaded');
-      const features = await (
-        athletesLayerView.layer as __esri.CSVLayer
-      ).queryFeatures(
+      console.log(`teamId = '${team?.attributes.espn_id}'`);
+      const features = await athletesLayerView.layer.queryFeatures(
         {
-          where: `type = '${sport}' AND teamId = '${team?.attributes.id}'`,
+          where: `teamId = '${team?.attributes.espn_id}'`,
           outFields: ['*'],
           returnGeometry: true,
         },
@@ -79,15 +75,15 @@ export default function TeamAthletesList({
 
       if (!features) return [];
 
-      return array()
-        .of(graphicSchema(athleteSchema))
-        .validateSync(features.features) as PointGraphic<Athlete>[];
+      console.log(features);
+
+      return features.features as PointGraphic<Athlete>[];
     },
-    onError: (err) => {
-      console.log(err);
-    },
+
     select: (data) => (data?.length === 0 ? undefined : data),
   });
+
+  console.log(teamAthletes);
 
   useEffect(() => {
     let isUpdating = false;
@@ -131,31 +127,12 @@ export default function TeamAthletesList({
     };
   }, [teamAthletes, playerLineLayer, team]);
 
-  // const averageDistance = useMemo(() => {
-  //   if (!teamAthletes || !team) return;
-
-  //   const distances = teamAthletes.map((athlete) =>
-  //     distance(
-  //       athlete.geometry as __esri.Point,
-  //       team.geometry as __esri.Point,
-  //       'miles'
-  //     )
-  //   );
-
-  //   const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
-
-  //   return avgDistance.toFixed(0);
-  // }, [teamAthletes, team]);
-
   return (
-    <>
-      {/* {averageDistance} */}
-      <AthleteList
-        loading={athletesLoading}
-        athletes={teamAthletes?.map((athlete) => athlete.attributes)}
-        onAthleteSelect={onAthleteSelect}
-        teams={teams}
-      />
-    </>
+    <AthleteList
+      loading={athletesLoading}
+      athletes={teamAthletes?.map((a) => a.attributes)}
+      onAthleteSelect={onAthleteSelect}
+      teams={teams}
+    />
   );
 }

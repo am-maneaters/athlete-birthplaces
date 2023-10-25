@@ -3,7 +3,6 @@ import {
   CalciteTabNav,
   CalciteTabTitle,
 } from '@esri/calcite-components-react';
-import { Team } from '../schemas/teamSchema';
 import { PointGraphic } from '../typings/AthleteTypes';
 import { useMemo, useState } from 'react';
 import {
@@ -15,8 +14,6 @@ import {
 import { TeamListItem } from './ListItem/TeamListItem';
 import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 import { PanelHeader } from './PanelHeader';
-import { UseQueryResult } from '@tanstack/react-query';
-import { Athlete } from '../schemas/athleteSchema';
 
 import { useOnEvent } from '../arcgisUtils/useOnEvent';
 import { isGraphicsHit } from '../utils/esriUtils';
@@ -25,18 +22,20 @@ import { ListContainer } from './List/ListContainer';
 import RegionList from './List/RegionList';
 import TeamAthletesList from './List/AthleteList/TeamAthletesList';
 import RegionAthletesList from './List/AthleteList/RegionAthletesList';
+import { Team, Athlete } from '../types';
 
 type TeamPanelProps = {
   mapView: __esri.MapView;
   teamId: string | undefined;
   onAthleteSelect: (athlete: string) => void;
-  teamQuery: UseQueryResult<PointGraphic<Team>[]>;
   sport: Sport;
   onTeamSelect: (team: number | undefined) => void;
   mode: 'Teams' | 'Regions';
   onModeChange: (mode: 'Teams' | 'Regions') => void;
   onSportChange: (sport: Sport) => void;
   teamsLayer: __esri.FeatureLayer;
+  isLoading: boolean;
+  teams: PointGraphic<Team>[];
 };
 
 const TABS = ['Teams', 'Regions'] as const;
@@ -45,13 +44,14 @@ export function TeamPanel({
   teamId,
   mapView,
   onAthleteSelect,
-  teamQuery,
   sport,
   onTeamSelect,
   mode,
   onModeChange,
   onSportChange,
   teamsLayer,
+  isLoading,
+  teams,
 }: TeamPanelProps) {
   const [regionType, setRegionType] = useState<'State' | 'Country' | 'City'>(
     'Country'
@@ -59,9 +59,8 @@ export function TeamPanel({
 
   const [selectedRegion, setSelectedRegion] = useState<Region>();
 
-  const teams = teamQuery.data;
   const team = useMemo(
-    () => teams?.find((f) => f.attributes.id.toString() === teamId),
+    () => teams?.find((f) => f.attributes.espn_id.toString() === teamId),
     [teams, teamId]
   );
 
@@ -90,9 +89,9 @@ export function TeamPanel({
       if (isGraphicsHit(firstHit)) {
         const { graphic } = firstHit;
 
-        if (!Object.hasOwn(graphic.attributes, 'id'))
+        if (!Object.hasOwn(graphic.attributes, 'espn_id'))
           throw new Error('Could not get team id');
-        onTeamSelect(graphic.attributes.id);
+        onTeamSelect(graphic.attributes.espn_id);
       }
       return;
     }
@@ -109,10 +108,12 @@ export function TeamPanel({
     if (isGraphicsHit(firstHit)) {
       const { graphic } = firstHit;
 
-      if (!Object.hasOwn(graphic.attributes, 'id'))
+      if (!Object.hasOwn(graphic.attributes, 'espn_id'))
         throw new Error('Could not get team id');
 
       const athlete = graphic.attributes as Athlete;
+
+      console.log(athlete);
 
       onModeChange('Regions');
       setRegionType('City');
@@ -235,16 +236,16 @@ export function TeamPanel({
           )}
 
           {showTeams && (
-            <ListContainer loading={teamQuery.isLoading}>
+            <ListContainer loading={isLoading}>
               {teams
                 ?.sort((a, b) =>
                   a.attributes.location.localeCompare(b.attributes.location)
                 )
                 .map((team) => (
                   <TeamListItem
-                    key={team.attributes.id}
+                    key={team.attributes.espn_id}
                     team={team.attributes}
-                    onClick={() => onTeamSelect(team.attributes.id)}
+                    onClick={() => onTeamSelect(team.attributes.espn_id)}
                   />
                 ))}
             </ListContainer>

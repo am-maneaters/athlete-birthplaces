@@ -7,11 +7,10 @@ import { Fragment, useMemo, useState } from 'react';
 import { getTeamLogoUrl } from '../../../utils/imageUtils';
 import { AthleteListItem } from '../../ListItem/AthleteListItem';
 import { ListContainer } from '../ListContainer';
-import { Athlete } from '../../../schemas/athleteSchema';
 import { SortField, useGroupSort } from '../../../hooks/useGroupSort';
-import { Team } from '../../../schemas/teamSchema';
 import { PointGraphic } from '../../../typings/AthleteTypes';
 import { ListSorter } from '../../ListSorter';
+import { Athlete, Team } from '../../../types';
 
 const sortingFields: SortField[] = [
   {
@@ -51,11 +50,12 @@ export function AthleteList({
   const teamsById = useMemo(
     () =>
       teams?.reduce(
-        (acc, team) => ({ ...acc, [team.attributes.id]: team.attributes }),
+        (acc, team) => ({ ...acc, [team.attributes.espn_id]: team.attributes }),
         {} as Record<string, Team>
       ),
     [teams]
   );
+  console.log(athletes)
   const groupedAthletes = useGroupSort(athletes ?? [], sort, sortDirection);
   return (
     <>

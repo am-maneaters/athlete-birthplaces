@@ -14,17 +14,17 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@types/node": "^18.15.9",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "autoprefixer": "^10.4.14",
+    "@types/node": "^20.8.8",
+    "@types/react": "^18.2.31",
+    "@types/react-dom": "^18.2.14",
+    "autoprefixer": "^10.4.16",
     "eslint-config-sem": "https://github.com/samMatenaer/eslint-config-sem",
     "ncp": "^2.0.0",
-    "postcss": "^8.4.26",
-    "rollup-plugin-copy": "^3.4.0",
-    "tailwindcss": "^3.3.3",
-    "typescript": "^5.1.6",
-    "vite": "^4.4.4"
+    "postcss": "^8.4.31",
+    "rollup-plugin-copy": "^3.5.0",
+    "tailwindcss": "^3.3.4",
+    "typescript": "^5.2.2",
+    "vite": "^4.5.0"
   },
   "author": "Sam Matenaer",
   "license": "Apache-2.0",
@@ -32,16 +32,16 @@
     "singleQuote": true
   },
   "dependencies": {
-    "@arcgis/core": "^4.27.6",
-    "@esri/calcite-components": "^1.4.3",
-    "@esri/calcite-components-react": "^1.4.3",
-    "@floating-ui/react-dom": "^2.0.1",
+    "@arcgis/core": "^4.28.1",
+    "@esri/calcite-components": "^1.9.2",
+    "@esri/calcite-components-react": "^1.9.2",
+    "@floating-ui/react-dom": "^2.0.2",
     "@supabase/supabase-js": "^2.38.3",
-    "@tanstack/react-query": "^4.28.0",
-    "@vitejs/plugin-react-swc": "^3.3.2",
+    "@tanstack/react-query": "^5.0.5",
+    "@vitejs/plugin-react-swc": "^3.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "use-deep-compare-effect": "^1.8.1",
-    "yup": "^1.2.0"
+    "yup": "^1.3.2"
   }
 }

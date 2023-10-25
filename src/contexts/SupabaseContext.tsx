@@ -2,10 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createContext, useContext } from 'react';
 
 import { createClient } from '@supabase/supabase-js';
+import { Database } from './supabase';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 type SupabaseContextType = {
   supabase: SupabaseClient;
@@ -26,5 +27,5 @@ export function useSupabase() {
   if (context === null) {
     throw new Error('useSupabase must be used within a SupabaseProvider');
   }
-  return context.supabase;
+  return context.supabase as SupabaseClient<Database>;
 }

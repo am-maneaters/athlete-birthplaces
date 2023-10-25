@@ -1,3 +1,5 @@
+import { supabase } from '../contexts/SupabaseContext';
+
 export enum Sport {
   Hockey = 'hockey',
   Football = 'football',
@@ -11,24 +13,17 @@ export const sports = [
   Sport.Basketball,
   Sport.Baseball,
 ];
-const leagueLookup = {
+export const leagueLookup = {
   [Sport.Hockey]: 'nhl',
   [Sport.Football]: 'nfl',
   [Sport.Basketball]: 'nba',
   [Sport.Baseball]: 'mlb',
 };
 
-type ImageOptions = {
-  h?: number;
-  w?: number;
-  transparent?: boolean;
-};
-
 export const getAthleteHeadshotUrl = (athleteId: number, league: string) =>
-  new URL(
-    `../images/players/${league.toLowerCase()}/${athleteId}.webp`,
-    import.meta.url
-  ).href;
+  supabase.storage
+    .from('athlete-headshots')
+    .getPublicUrl(`${league.toLowerCase()}/${athleteId}.webp`).data.publicUrl;
 
 export const getLeagueLogoUrl = (sport: Sport) =>
   new URL(`../images/leagueLogos/${leagueLookup[sport]}.png`, import.meta.url)

@@ -1,35 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
 
 import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import { useQuery } from '@tanstack/react-query';
 import { replaceFeatures } from '../utils/layerUtils';
-import FeatureFilter from '@arcgis/core/layers/support/FeatureFilter';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
-import { array } from 'yup';
-import {
-  useFeatureLayer,
-  useGeoJSONLayer,
-  useGeoJsonLayerView,
-} from '../arcgisUtils/useGraphicsLayer';
-import { Team, teamSchema } from '../schemas/teamSchema';
-import { graphicSchema } from '../schemas/graphicSchema';
+import { useFeatureLayer } from '../arcgisUtils/useGraphicsLayer';
+
+import { Sport, getTeamLogoUrl, leagueLookup } from '../utils/imageUtils';
+import { useSupabase } from '../contexts/SupabaseContext';
 import { PointGraphic } from '../typings/AthleteTypes';
-import { getTeamLogoUrl } from '../utils/imageUtils';
+import { Team } from '../types';
 
 export function useTeamsLayer(
   mapView: __esri.MapView | undefined,
   selectedTeamId: string | undefined,
-  selectedSport: string
+  selectedSport: Sport
 ) {
-  const baseTeamLayer = useGeoJSONLayer(mapView, {
-    url: new URL('combined_teams.geojson', import.meta.url).href,
-    title: 'NHL Teams',
-    outFields: ['*'],
-    visible: false,
-  });
+  const supabase = useSupabase();
 
   const teamsLayer = useFeatureLayer(mapView, {
     title: 'Team Points',
@@ -60,20 +50,13 @@ export function useTeamsLayer(
         alias: 'name',
         type: 'string',
       },
+      {
+        name: 'espn_id',
+        alias: 'espn_id',
+        type: 'string',
+      },
     ],
   });
-
-  const teamsView = useGeoJsonLayerView(mapView, baseTeamLayer);
-
-  useEffect(() => {
-    if (!mapView || !teamsView) return;
-
-    const sportTypeFilter = new FeatureFilter({
-      where: `type = '${selectedSport}'`,
-    });
-
-    teamsView.filter = sportTypeFilter;
-  }, [mapView, selectedSport, teamsView]);
 
   //   Apply feature effect to the teams layer
   useEffect(() => {
@@ -95,52 +78,57 @@ export function useTeamsLayer(
 
   //  Query the base team layer for the selected sport
   const teamQuery = useQuery({
-    queryKey: ['teamInfo', selectedSport, teamSchema],
-    queryFn: async ({ signal }) => {
-      const features = await baseTeamLayer.queryFeatures(
-        {
-          where: `type = '${selectedSport}'`,
-          outFields: ['*'],
-          returnGeometry: true,
-        },
-        { signal }
-      );
-      return array()
-        .of(graphicSchema(teamSchema))
-        .validate(features.features) as Promise<PointGraphic<Team>[]>;
+    queryKey: ['teamInfo', selectedSport],
+    queryFn: async ({ signal }) =>
+      supabase
+        .from('Teams')
+        .select('*')
+        .eq('league', leagueLookup[selectedSport])
+        .abortSignal(signal),
+    throwOnError: true,
+    select: ({ data }) => {
+      if (!data) return;
+      return data.map((team) => ({
+        ...team,
+        logo: getTeamLogoUrl(team.abbreviation, team.league),
+      }));
     },
   });
 
+  const teamsGraphics = useMemo(() => {
+    const { data: teamFeatures } = teamQuery;
+    if (!teamFeatures) return;
+    const newFeatures = teamFeatures.map(
+      ({ latitude, longitude, ...attributes }) =>
+        new Graphic({
+          geometry: new Point({ longitude, latitude }),
+          attributes: { ...attributes },
+        }) as PointGraphic<Team>
+    );
+
+    return newFeatures;
+  }, [teamQuery]);
+
   //  Replace features in the teams layer
   useEffect(() => {
-    const { data: teamFeatures } = teamQuery;
-    if (!teamFeatures || !teamsLayer) return;
+    if (!teamsLayer || !teamsGraphics) return;
 
     teamsLayer.renderer = new UniqueValueRenderer({
       field: 'name',
-      uniqueValueInfos: teamFeatures.map(({ attributes }) => ({
-        value: attributes.name,
-        symbol: new PictureMarkerSymbol({
-          url: getTeamLogoUrl(attributes.abbreviation, attributes.league),
-          width: '48px',
-          height: '48px',
-        }),
-      })),
+      uniqueValueInfos: teamsGraphics.map(
+        ({ attributes: { name, abbreviation, league } }) => ({
+          value: name,
+          symbol: new PictureMarkerSymbol({
+            url: getTeamLogoUrl(abbreviation, league),
+            width: '48px',
+            height: '48px',
+          }),
+        })
+      ),
     });
 
-    const newFeatures = teamFeatures.map(
-      ({ geometry, attributes }) =>
-        new Graphic({
-          geometry: new Point({
-            longitude: geometry.longitude,
-            latitude: geometry.latitude,
-          }),
-          attributes: { ...attributes },
-        })
-    );
+    replaceFeatures(teamsLayer, teamsGraphics);
+  }, [teamQuery, teamsGraphics, teamsLayer]);
 
-    replaceFeatures(teamsLayer, newFeatures);
-  }, [baseTeamLayer.fields, teamQuery, teamsLayer]);
-
-  return { teamsLayer, teamQuery };
+  return { teamsLayer, isLoading: teamQuery.isLoading, teamsGraphics };
 }

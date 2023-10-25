@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { CalciteListItem } from '@esri/calcite-components-react';
-import { Athlete } from '../../schemas/athleteSchema';
-import { Sport, getAthleteHeadshotUrl } from '../../utils/imageUtils';
+import { getAthleteHeadshotUrl } from '../../utils/imageUtils';
+import { Athlete } from '../../types';
 
 export interface AthleteListItemProps {
   athlete: Athlete;
@@ -19,10 +19,9 @@ export const AthleteListItem = ({
     lastName,
     birthPlace,
     league,
-    type,
     jersey,
-    displayHeight,
-    displayWeight,
+    height,
+    weight,
     dateOfBirth,
   },
   onClick,
@@ -30,11 +29,11 @@ export const AthleteListItem = ({
   mode = 'card',
 }: AthleteListItemProps) => {
   const [showImage, setShowImage] = React.useState(true);
-
+  console.log(getAthleteHeadshotUrl(id, league));
   return mode === 'card' ? (
     <CalciteListItem
       label={`${firstName} ${lastName}`}
-      description={birthPlace}
+      description={birthPlace ?? 'N/AA'}
       onClick={onClick}
     >
       <div
@@ -78,8 +77,8 @@ export const AthleteListItem = ({
       </div>
 
       <div slot="content-end" className="flex flex-col mr-2 text-n3 items-end">
-        <span>{displayHeight}</span>
-        <span>{displayWeight}</span>
+        <span>{height}</span>
+        <span>{weight}</span>
         {dateOfBirth !== null && (
           <span>
             {new Date(Number(dateOfBirth)).toLocaleDateString('en-US')}
@@ -90,7 +89,7 @@ export const AthleteListItem = ({
   ) : (
     <CalciteListItem
       label={`${firstName} ${lastName}`}
-      description={birthPlace}
+      description={birthPlace ?? 'N/AA?'}
       onClick={onClick}
     />
   );

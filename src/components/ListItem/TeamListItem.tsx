@@ -1,6 +1,6 @@
 import { CalciteListItem } from '@esri/calcite-components-react';
-import { Team } from '../../schemas/teamSchema';
 import { getTeamLogoUrl } from '../../utils/imageUtils';
+import { Team } from '../../types';
 
 export function TeamListItem({
   team,

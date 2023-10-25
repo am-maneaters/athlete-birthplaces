@@ -28,7 +28,7 @@ export function App() {
     setSelectedTeamId(undefined);
   }, [sport]);
 
-  const { teamsLayer, teamQuery } = useTeamsLayer(
+  const { teamsLayer, isLoading, teamsGraphics } = useTeamsLayer(
     mapView,
     selectedTeamId,
     sport
@@ -79,8 +79,9 @@ export function App() {
           {mapView && (
             <TeamPanel
               mapView={mapView}
+              teams={teamsGraphics}
               teamId={selectedTeamId}
-              teamQuery={teamQuery}
+              isLoading={isLoading}
               onAthleteSelect={(athleteId) => {
                 // setPanelMode('Athletes');
                 setSelectedPlayerId(athleteId);

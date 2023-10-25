@@ -1,8 +1,8 @@
 import React from 'react';
 import { useOnEvent } from '../arcgisUtils/useOnEvent';
-import { Athlete } from '../schemas/athleteSchema';
 import { isGraphicsHit } from '../utils/esriUtils';
 import { autoPlacement, autoUpdate, useFloating } from '@floating-ui/react-dom';
+import { Athlete } from '../types';
 
 type Props = {
   mapView: __esri.MapView;
