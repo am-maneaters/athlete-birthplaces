@@ -4,7 +4,6 @@ import '@arcgis/core/assets/esri/themes/dark/main.css';
 
 import './index.css';
 
-import { MapStateProvider } from './arcgisUtils/MapStateContext';
 import { App } from './App';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -23,11 +22,9 @@ const queryClient = new QueryClient({
 root.render(
   <StrictMode>
     <SupabaseProvider>
-      <MapStateProvider>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </MapStateProvider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </SupabaseProvider>
   </StrictMode>
 );

@@ -58,24 +58,6 @@ export function useTeamsLayer(
     ],
   });
 
-  //   Apply feature effect to the teams layer
-  useEffect(() => {
-    if (!mapView || !selectedTeamId) {
-      // Clear the feature effect
-      // @ts-expect-error - maps sdk types are wrong
-      teamsLayer.featureEffect = undefined;
-      return;
-    }
-
-    teamsLayer.featureEffect = new FeatureEffect({
-      excludedEffect: 'opacity(20%)',
-      filter: {
-        where: `id = '${selectedTeamId}'`,
-      },
-      excludedLabelsVisible: false,
-    });
-  }, [teamsLayer, mapView, selectedTeamId]);
-
   //  Query the base team layer for the selected sport
   const teamQuery = useQuery({
     queryKey: ['teamInfo', selectedSport],
@@ -128,7 +110,7 @@ export function useTeamsLayer(
     });
 
     replaceFeatures(teamsLayer, teamsGraphics);
-  }, [teamQuery, teamsGraphics, teamsLayer]);
+  }, [teamsGraphics, teamsLayer]);
 
   return { teamsLayer, isLoading: teamQuery.isLoading, teamsGraphics };
 }

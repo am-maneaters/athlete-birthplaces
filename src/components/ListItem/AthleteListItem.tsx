@@ -29,7 +29,6 @@ export const AthleteListItem = ({
   mode = 'card',
 }: AthleteListItemProps) => {
   const [showImage, setShowImage] = React.useState(true);
-  console.log(getAthleteHeadshotUrl(id, league));
   return mode === 'card' ? (
     <CalciteListItem
       label={`${firstName} ${lastName}`}

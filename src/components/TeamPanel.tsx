@@ -23,9 +23,9 @@ import RegionList from './List/RegionList';
 import TeamAthletesList from './List/AthleteList/TeamAthletesList';
 import RegionAthletesList from './List/AthleteList/RegionAthletesList';
 import { Team, Athlete } from '../types';
+import { useMapView } from '../arcgisUtils/MapViewComponent';
 
 type TeamPanelProps = {
-  mapView: __esri.MapView;
   teamId: string | undefined;
   onAthleteSelect: (athlete: string) => void;
   sport: Sport;
@@ -42,7 +42,6 @@ const TABS = ['Teams', 'Regions'] as const;
 
 export function TeamPanel({
   teamId,
-  mapView,
   onAthleteSelect,
   sport,
   onTeamSelect,
@@ -53,6 +52,7 @@ export function TeamPanel({
   isLoading,
   teams,
 }: TeamPanelProps) {
+  const mapView = useMapView();
   const [regionType, setRegionType] = useState<'State' | 'Country' | 'City'>(
     'Country'
   );

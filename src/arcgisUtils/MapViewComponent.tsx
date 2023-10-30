@@ -53,3 +53,13 @@ export default function MapViewComponent({
     </MapContext.Provider>
   );
 }
+
+export function useMapView() {
+  const mapView = React.useContext(MapContext);
+
+  if (!mapView) {
+    throw new Error('useMapView must be used within a MapViewProvider');
+  }
+
+  return mapView;
+}

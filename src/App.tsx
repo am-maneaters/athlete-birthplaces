@@ -11,6 +11,7 @@ import Basemap from '@arcgis/core/Basemap';
 import { TeamPanel } from './components/TeamPanel';
 import { useTeamsLayer } from './hooks/teamLayerHooks';
 import { Sport } from './utils/imageUtils';
+import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
 
 export function App() {
   const [mapView, setMapView] = useState<MapView>();
@@ -43,6 +44,24 @@ export function App() {
     }
   }, [panelMode, teamsLayer]);
 
+  //   Apply feature effect to the teams layer
+
+  useEffect(() => {
+    if (!mapView || !selectedTeamId) {
+      // Clear the feature effect
+      // @ts-expect-error - maps sdk types are wrong
+      teamsLayer.featureEffect = undefined;
+      return;
+    }
+
+    teamsLayer.featureEffect = new FeatureEffect({
+      excludedEffect: 'opacity(20%)',
+      filter: {
+        where: `espn_id = '${selectedTeamId}'`,
+      },
+      excludedLabelsVisible: false,
+    });
+  }, [teamsLayer, mapView, selectedTeamId]);
   return (
     <div>
       <CalciteShell className="calcite-mode-dark">
@@ -73,12 +92,9 @@ export function App() {
             setMapView(loadedView);
           }}
           style={{ height: '100vh' }}
-        />
-
-        <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
-          {mapView && (
+        >
+          <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
             <TeamPanel
-              mapView={mapView}
               teams={teamsGraphics}
               teamId={selectedTeamId}
               isLoading={isLoading}
@@ -95,8 +111,8 @@ export function App() {
               onSportChange={setSport}
               teamsLayer={teamsLayer}
             />
-          )}
-        </div>
+          </div>
+        </MapViewComponent>
       </CalciteShell>
     </div>
   );
