@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from 'react';
-import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
 
 import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
@@ -16,7 +15,6 @@ import { Team } from '../types';
 
 export function useTeamsLayer(
   mapView: __esri.MapView | undefined,
-  selectedTeamId: string | undefined,
   selectedSport: Sport
 ) {
   const supabase = useSupabase();
