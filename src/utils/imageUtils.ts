@@ -26,14 +26,16 @@ export const getAthleteHeadshotUrl = (athleteId: number, league: string) =>
     .getPublicUrl(`${league.toLowerCase()}/${athleteId}.webp`).data.publicUrl;
 
 export const getLeagueLogoUrl = (sport: Sport) =>
-  new URL(`../images/leagueLogos/${leagueLookup[sport]}.png`, import.meta.url)
-    .href;
+  supabase.storage
+    .from('league-logos')
+    .getPublicUrl(`${leagueLookup[sport].toLowerCase()}.webp`).data.publicUrl;
 
 export const getTeamLogoUrl = (teamAbbreviation: string, league: string) =>
-  new URL(
-    `../images/${league.toLowerCase()}/${teamAbbreviation.toLowerCase()}.png`,
-    import.meta.url
-  ).href;
+  supabase.storage
+    .from('team-logos')
+    .getPublicUrl(
+      `${league.toLowerCase()}/${teamAbbreviation.toLowerCase()}.png`
+    ).data.publicUrl;
 
 export const getCountryFlagUrl = (countryCode: string) =>
   supabase.storage

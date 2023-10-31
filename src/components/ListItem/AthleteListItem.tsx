@@ -4,6 +4,7 @@ import React from 'react';
 import { CalciteListItem } from '@esri/calcite-components-react';
 import { getAthleteHeadshotUrl } from '../../utils/imageUtils';
 import { Athlete } from '../../types';
+import { formatHeight, formatWeight } from '../../utils/stringUtils';
 
 export interface AthleteListItemProps {
   athlete: Athlete;
@@ -13,7 +14,12 @@ export interface AthleteListItemProps {
 }
 
 export const AthleteListItem = ({
-  athlete: {
+  athlete,
+  onClick,
+  teamLogoUrl,
+  mode = 'card',
+}: AthleteListItemProps) => {
+  const {
     id,
     firstName,
     lastName,
@@ -23,11 +29,8 @@ export const AthleteListItem = ({
     height,
     weight,
     dateOfBirth,
-  },
-  onClick,
-  teamLogoUrl,
-  mode = 'card',
-}: AthleteListItemProps) => {
+  } = athlete;
+  console.log(athlete);
   const [showImage, setShowImage] = React.useState(true);
   return mode === 'card' ? (
     <CalciteListItem
@@ -48,7 +51,7 @@ export const AthleteListItem = ({
         />
         {showImage && (
           <img
-            src={getAthleteHeadshotUrl(id, league)}
+            src={getAthleteHeadshotUrl(id, league ?? '')}
             alt="Athlete Headshot"
             height="100px"
             width="140px"
@@ -76,12 +79,10 @@ export const AthleteListItem = ({
       </div>
 
       <div slot="content-end" className="flex flex-col mr-2 text-n3 items-end">
-        <span>{height}</span>
-        <span>{weight}</span>
+        <span>{formatHeight(height)}</span>
+        <span>{formatWeight(weight)}</span>
         {dateOfBirth !== null && (
-          <span>
-            {new Date(Number(dateOfBirth)).toLocaleDateString('en-US')}
-          </span>
+          <span>{new Date(dateOfBirth).toLocaleDateString('en-US')}</span>
         )}
       </div>
     </CalciteListItem>

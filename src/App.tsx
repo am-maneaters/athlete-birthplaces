@@ -4,14 +4,8 @@ import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 
 import { CalciteShell } from '@esri/calcite-components-react';
 
-import { useState } from 'react';
-import MapView from '@arcgis/core/views/MapView';
-
 import Basemap from '@arcgis/core/Basemap';
 import { TeamPanel } from './components/TeamPanel';
-import { useTeamsLayer } from './hooks/teamLayerHooks';
-import { Sport } from './utils/imageUtils';
-import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
 
 const mapProps: __esri.MapViewProperties = {
   ui: { components: [] },
@@ -19,8 +13,6 @@ const mapProps: __esri.MapViewProperties = {
   zoom: 4,
   padding: { right: 300 },
   constraints: {
-    // minZoom: 2,
-    // maxZoom: 10,
     rotationEnabled: false,
   },
 };

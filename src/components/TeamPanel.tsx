@@ -174,7 +174,11 @@ export function TeamPanel() {
           {showTeamAthletes && (
             <>
               <PanelHeader
-                bgColor={team.attributes.color ?? undefined}
+                bgColor={
+                  team.attributes.color
+                    ? `#${team.attributes.color}`
+                    : undefined
+                }
                 onBackClick={() => handleTeamSelect(undefined)}
                 title={team.attributes.location}
                 subtitle={team.attributes.name}

@@ -55,7 +55,6 @@ export function AthleteList({
       ),
     [teams]
   );
-  console.log(athletes)
   const groupedAthletes = useGroupSort(athletes ?? [], sort, sortDirection);
   return (
     <>
@@ -99,7 +98,7 @@ export function AthleteList({
             )}
 
             {athletes.map((athlete) => {
-              const team = teamsById?.[athlete.teamId];
+              const team = teamsById?.[athlete.teamId ?? 0];
               return (
                 <AthleteListItem
                   key={`${athlete.type}-${athlete.id}`}

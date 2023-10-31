@@ -50,6 +50,11 @@ export function useAthletesLayer(
         type: 'string',
       },
       {
+        name: 'weight',
+        alias: 'weight',
+        type: 'integer',
+      },
+      {
         name: 'teamId',
         alias: 'teamId',
         type: 'string',
@@ -215,22 +220,26 @@ export function useAthletesLayer(
     });
   }, [athletesLayer]);
 
-  useEffect(() => {
-    const { data: athleteFeatures } = athleteQuery;
-    if (!athleteFeatures) return;
-    const newFeatures = athleteFeatures.map(
-      ({ latitude, longitude, ...attributes }) =>
-        new Graphic({
-          geometry: new Point({
-            longitude: longitude ?? undefined,
-            latitude: latitude ?? undefined,
-          }),
-          attributes: { ...attributes },
-        }) as PointGraphic<Athlete>
-    );
+  useQuery({
+    queryKey: ['replaceAthleteFeatures', athleteQuery, athletesLayer],
+    queryFn: async ({ signal }) => {
+      const { data: athleteFeatures } = athleteQuery;
+      if (!athleteFeatures) return null;
+      const newFeatures = athleteFeatures.map(
+        ({ latitude, longitude, ...attributes }) =>
+          new Graphic({
+            geometry: new Point({
+              longitude: longitude ?? undefined,
+              latitude: latitude ?? undefined,
+            }),
+            attributes: { ...attributes },
+          }) as PointGraphic<Athlete>
+      );
 
-    replaceFeatures(athletesLayer, newFeatures);
-  }, [athleteQuery, athletesLayer]);
+      await replaceFeatures(athletesLayer, newFeatures, signal);
+      return null;
+    },
+  });
 
   useEffect(() => {
     if (!selectedTeam) {
