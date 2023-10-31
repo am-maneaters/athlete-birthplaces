@@ -36,5 +36,6 @@ export const getTeamLogoUrl = (teamAbbreviation: string, league: string) =>
   ).href;
 
 export const getCountryFlagUrl = (countryCode: string) =>
-  new URL(`../images/flags/${countryCode.toLowerCase()}.png`, import.meta.url)
-    .href;
+  supabase.storage
+    .from('country-flags')
+    .getPublicUrl(`${countryCode.toLowerCase()}.webp`).data.publicUrl;

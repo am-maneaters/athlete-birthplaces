@@ -4,12 +4,7 @@ import {
   CalciteTabTitle,
 } from '@esri/calcite-components-react';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Sport,
-  getCountryFlagUrl,
-  getLeagueLogoUrl,
-  getTeamLogoUrl,
-} from '../utils/imageUtils';
+import { Sport, getLeagueLogoUrl, getTeamLogoUrl } from '../utils/imageUtils';
 import { TeamListItem } from './ListItem/TeamListItem';
 import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 import { PanelHeader } from './PanelHeader';
@@ -18,7 +13,7 @@ import { useOnEvent } from '../arcgisUtils/useOnEvent';
 import { isGraphicsHit } from '../utils/esriUtils';
 import { Region } from './ListItem/RegionListItem';
 import { ListContainer } from './List/ListContainer';
-import RegionList from './List/RegionList';
+import RegionList, { createRegionFromAthlete } from './List/RegionList';
 import TeamAthletesList from './List/AthleteList/TeamAthletesList';
 import RegionAthletesList from './List/AthleteList/RegionAthletesList';
 import { Athlete } from '../types';
@@ -62,9 +57,11 @@ export function TeamPanel() {
   const handlePanelModeChange = (mode: 'Teams' | 'Regions') => {
     setPanelMode(mode);
     setSelectedTeamId(undefined);
-
-    teamsLayer.visible = panelMode === 'Teams';
   };
+
+  useEffect(() => {
+    teamsLayer.visible = panelMode === 'Teams';
+  }, [panelMode, teamsLayer]);
 
   const [regionType, setRegionType] = useState<'State' | 'Country' | 'City'>(
     'Country'
@@ -139,14 +136,9 @@ export function TeamPanel() {
 
       handlePanelModeChange('Regions');
       setRegionType('City');
-      setSelectedRegion({
-        img: getCountryFlagUrl(athlete.country2Code),
-        count: 1,
-        Country: athlete.birthCountry,
-        State: athlete.birthState ?? undefined,
-        City: athlete.birthCity,
-        label: athlete.birthCity,
-      });
+
+      const newRegion = createRegionFromAthlete(athlete, regionType);
+      setSelectedRegion(newRegion);
     }
   }
 
@@ -182,7 +174,7 @@ export function TeamPanel() {
           {showTeamAthletes && (
             <>
               <PanelHeader
-                bgColor={team.attributes.color}
+                bgColor={team.attributes.color ?? undefined}
                 onBackClick={() => handleTeamSelect(undefined)}
                 title={team.attributes.location}
                 subtitle={team.attributes.name}

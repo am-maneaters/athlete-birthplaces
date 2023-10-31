@@ -89,6 +89,12 @@ export function useTeamsLayer(
     return newFeatures;
   }, [teamQuery]);
 
+  useQuery({
+    queryKey: ['replaceFeatures', teamsGraphics],
+    queryFn: async ({ signal }) =>
+      teamsGraphics ? replaceFeatures(teamsLayer, teamsGraphics, signal) : null,
+  });
+
   //  Replace features in the teams layer
   useEffect(() => {
     if (!teamsLayer || !teamsGraphics) return;
@@ -106,8 +112,6 @@ export function useTeamsLayer(
         })
       ),
     });
-
-    replaceFeatures(teamsLayer, teamsGraphics);
   }, [teamsGraphics, teamsLayer]);
 
   return { teamsLayer, isLoading: teamQuery.isLoading, teamsGraphics };
