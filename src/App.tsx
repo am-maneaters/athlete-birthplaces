@@ -4,98 +4,66 @@ import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 
 import { CalciteShell } from '@esri/calcite-components-react';
 
-import { useEffect, useState } from 'react';
-import MapView from '@arcgis/core/views/MapView';
-
 import Basemap from '@arcgis/core/Basemap';
-import { TeamPanel } from './components/TeamPanel';
-import { useTeamsLayer } from './hooks/teamLayerHooks';
+import { AppPanel } from './components/AppPanel';
 import { Sport } from './utils/imageUtils';
 
+const mapProps: __esri.MapViewProperties = {
+  ui: { components: [] },
+  center: [-98, 38.88],
+  zoom: 4,
+  padding: { right: 300 },
+  constraints: {
+    rotationEnabled: false,
+  },
+};
+
+const basemap = new Basemap({
+  baseLayers: [
+    new VectorTileLayer({
+      portalItem: {
+        id: '4319987495b946418b1cde2f7c29ab1c',
+      },
+    }),
+  ],
+});
+
+const useSearchParams = () => {
+  const search = window.location.search;
+  const params = new URLSearchParams(search);
+  const sportParam = params.get('sport');
+  const teamIdParam = params.get('teamId');
+  const playerIdParam = params.get('playerId');
+
+  // make sure sport is valid
+  const sport = Object.values(Sport).includes(sportParam as Sport)
+    ? (sportParam as Sport)
+    : Sport.Hockey;
+
+  const teamId = teamIdParam ?? undefined;
+  const playerId = playerIdParam ?? undefined;
+
+  return { sport, teamId, playerId };
+};
+
 export function App() {
-  const [mapView, setMapView] = useState<MapView>();
-
-  const [selectedTeamId, setSelectedTeamId] = useState<string>();
-
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>();
-
-  const [panelMode, setPanelMode] = useState<'Teams' | 'Regions'>('Teams');
-
-  const [sport, setSport] = useState(Sport.Hockey);
-
-  useEffect(() => {
-    // setSelectedPlayerId(undefined);
-    setSelectedTeamId(undefined);
-  }, [sport]);
-
-  const { teamsLayer, teamQuery } = useTeamsLayer(
-    mapView,
-    selectedTeamId,
-    sport
-  );
-
-  useEffect(() => {
-    if (panelMode === 'Regions') {
-      setSelectedTeamId(undefined);
-      teamsLayer.visible = false;
-    } else {
-      teamsLayer.visible = true;
-    }
-  }, [panelMode, teamsLayer]);
-
+  const { sport, teamId, playerId } = useSearchParams();
   return (
     <div>
       <CalciteShell className="calcite-mode-dark">
         <MapViewComponent
-          mapProps={{
-            basemap: new Basemap({
-              baseLayers: [
-                new VectorTileLayer({
-                  portalItem: {
-                    id: '4319987495b946418b1cde2f7c29ab1c',
-                  },
-                }),
-              ],
-            }),
-          }}
-          mapViewProps={{
-            ui: { components: [] },
-            center: [-98, 38.88],
-            zoom: 4,
-            padding: { right: 300 },
-            constraints: {
-              minZoom: 2,
-              maxZoom: 10,
-              rotationEnabled: false,
-            },
-          }}
-          onMapViewLoad={(loadedView) => {
-            setMapView(loadedView);
-          }}
+          mapProps={{ basemap }}
+          mapViewProps={mapProps}
           style={{ height: '100vh' }}
-        />
-
-        <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
-          {mapView && (
-            <TeamPanel
-              mapView={mapView}
-              teamId={selectedTeamId}
-              teamQuery={teamQuery}
-              onAthleteSelect={(athleteId) => {
-                // setPanelMode('Athletes');
-                setSelectedPlayerId(athleteId);
-              }}
-              sport={sport}
-              onTeamSelect={(teamId) => {
-                setSelectedTeamId(teamId?.toString());
-              }}
-              mode={panelMode}
-              onModeChange={setPanelMode}
-              onSportChange={setSport}
-              teamsLayer={teamsLayer}
+        >
+          <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
+            <AppPanel
+              initialSport={sport}
+              initialTeamId={teamId}
+              initialPlayerId={playerId}
             />
-          )}
-        </div>
+          </div>
+        </MapViewComponent>
       </CalciteShell>
     </div>
   );

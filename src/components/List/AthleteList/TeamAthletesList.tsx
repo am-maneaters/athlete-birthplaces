@@ -1,23 +1,18 @@
-import React, { useEffect, useMemo } from 'react';
+import React from 'react';
 import { AthleteList } from './AthleteList';
-import { Team } from '../../../schemas/teamSchema';
-import { Athlete, athleteSchema } from '../../../schemas/athleteSchema';
 import { useQuery } from '@tanstack/react-query';
-import { array } from 'yup';
-import { graphicSchema } from '../../../schemas/graphicSchema';
 import { PointGraphic } from '../../../typings/AthleteTypes';
 import {
   useFeatureLayer,
   useFeatureLayerView,
 } from '../../../arcgisUtils/useGraphicsLayer';
-import Color from '@arcgis/core/Color';
 import Graphic from '@arcgis/core/Graphic';
 import Polyline from '@arcgis/core/geometry/Polyline';
 import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
-import { getLuminance } from '../../../utils/colorUtils';
 import { replaceFeatures } from '../../../utils/layerUtils';
-import { distance } from '@arcgis/core/geometry/geometryEngine';
+import { Athlete, Team } from '../../../types';
+import { getTeamLineColor } from '../../../utils/teamUtils';
 
 type Props = {
   onAthleteSelect: (athlete: string) => void;
@@ -61,16 +56,15 @@ export default function TeamAthletesList({
 
   const { data: teamAthletes, isLoading: athletesLoading } = useQuery({
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryKey: ['relatedPlayers', team, sport, athleteSchema],
+    queryKey: ['relatedPlayers', team, sport],
     enabled: !!athletesLayerView,
     queryFn: async ({ signal }) => {
       if (!team) return [];
 
       if (!athletesLayerView) throw new Error('Athletes layer not loaded');
-
-      const features = await athletesLayerView?.queryFeatures(
+      const features = await athletesLayerView.layer.queryFeatures(
         {
-          where: `type = '${sport}' AND teamId = ${team?.attributes.id}`,
+          where: `teamId = '${team?.attributes.espn_id}'`,
           outFields: ['*'],
           returnGeometry: true,
         },
@@ -79,83 +73,57 @@ export default function TeamAthletesList({
 
       if (!features) return [];
 
-      return array()
-        .of(graphicSchema(athleteSchema))
-        .validateSync(features.features) as PointGraphic<Athlete>[];
+      return features.features as PointGraphic<Athlete>[];
     },
-    onError: (err) => {
-      console.log(err);
-    },
+
     select: (data) => (data?.length === 0 ? undefined : data),
   });
 
-  useEffect(() => {
-    let isUpdating = false;
-    async function updateLines() {
-      if (isUpdating) return;
-      isUpdating = true;
-      await replaceFeatures(playerLineLayer, []);
-      if (!teamAthletes || !team) return;
-      const primaryColor = new Color(team.attributes.color);
-      const secondaryColor = new Color(team.attributes.alternateColor);
-      const lineColor =
-        getLuminance(primaryColor) > getLuminance(secondaryColor)
-          ? primaryColor
-          : secondaryColor;
-      lineColor.a = 0.25;
+  console.log(teamAthletes);
+
+  useQuery({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
+    queryKey: ['playerLines', team, teamAthletes, playerLineLayer],
+    enabled: !!playerLineLayer,
+    queryFn: async ({ signal }) => {
+      if (!team || !teamAthletes) return [];
+
+      const lineColor = getTeamLineColor(team);
+
       playerLineLayer.renderer = new SimpleRenderer({
         symbol: new SimpleLineSymbol({
           color: lineColor,
           width: 2,
         }),
       });
-      const teamPoint = [team.geometry.longitude, team.geometry.latitude];
+
       const newGraphicsPromise = teamAthletes.map(
-        async ({ geometry, attributes }) => {
-          const polyline = new Polyline({
-            paths: [[[geometry.longitude, geometry.latitude], teamPoint]],
-          });
-          return new Graphic({
-            geometry: polyline,
+        async ({ geometry, attributes }) =>
+          new Graphic({
+            geometry: new Polyline({
+              paths: [
+                [
+                  // Create a line from the team to the player
+                  [geometry.longitude, geometry.latitude],
+                  [team.geometry.longitude, team.geometry.latitude],
+                ],
+              ],
+            }),
             attributes: { ...attributes },
-          });
-        }
+          })
       );
       const newGraphics = await Promise.all(newGraphicsPromise);
-      await replaceFeatures(playerLineLayer, newGraphics);
-      isUpdating = false;
-    }
-    updateLines();
-    return () => {
-      isUpdating = true;
-    };
-  }, [teamAthletes, playerLineLayer, team]);
-
-  // const averageDistance = useMemo(() => {
-  //   if (!teamAthletes || !team) return;
-
-  //   const distances = teamAthletes.map((athlete) =>
-  //     distance(
-  //       athlete.geometry as __esri.Point,
-  //       team.geometry as __esri.Point,
-  //       'miles'
-  //     )
-  //   );
-
-  //   const avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
-
-  //   return avgDistance.toFixed(0);
-  // }, [teamAthletes, team]);
+      await replaceFeatures(playerLineLayer, newGraphics, signal);
+      return newGraphics;
+    },
+  });
 
   return (
-    <>
-      {/* {averageDistance} */}
-      <AthleteList
-        loading={athletesLoading}
-        athletes={teamAthletes?.map((athlete) => athlete.attributes)}
-        onAthleteSelect={onAthleteSelect}
-        teams={teams}
-      />
-    </>
+    <AthleteList
+      loading={athletesLoading}
+      athletes={teamAthletes?.map((a) => a.attributes)}
+      onAthleteSelect={onAthleteSelect}
+      teams={teams}
+    />
   );
 }

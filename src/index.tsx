@@ -4,13 +4,10 @@ import '@arcgis/core/assets/esri/themes/dark/main.css';
 
 import './index.css';
 
-import { MapStateProvider } from './arcgisUtils/MapStateContext';
 import { App } from './App';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { defineCustomElements } from '@esri/calcite-components/dist/loader';
-// CDN hosted assets
-defineCustomElements(window);
+import { SupabaseProvider } from './contexts/SupabaseContext';
 
 // Create a root element for the application
 const root = createRoot(document.querySelector('#root')!);
@@ -21,10 +18,10 @@ const queryClient = new QueryClient({
 // Render the application
 root.render(
   <StrictMode>
-    <MapStateProvider>
+    <SupabaseProvider>
       <QueryClientProvider client={queryClient}>
         <App />
       </QueryClientProvider>
-    </MapStateProvider>
+    </SupabaseProvider>
   </StrictMode>
 );

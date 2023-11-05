@@ -8,6 +8,7 @@ export type Region = {
   State?: string;
   City: string;
   label: string;
+  key: string;
 };
 
 type Props = {

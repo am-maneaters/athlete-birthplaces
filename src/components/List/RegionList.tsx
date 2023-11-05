@@ -1,4 +1,3 @@
-import React from 'react';
 import { Region, RegionListItem } from '../ListItem/RegionListItem';
 import { ListContainer } from './ListContainer';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +11,33 @@ type Props = {
   onRegionClick: (region: Region) => void;
 };
 
+const regionFields = {
+  City: ['birthCity', 'birthState', 'birthCountry'],
+  State: ['birthState', 'birthCountry'],
+  Country: ['birthCountry'],
+} as const;
+
+export function createRegionFromAthlete(
+  athlete: __esri.Graphic['attributes'],
+  regionType: keyof typeof regionFields
+): Region {
+  const fields = regionFields[regionType];
+  const label = fields
+    .map((field) => athlete[field])
+    .filter(Boolean)
+    .join(', ');
+
+  return {
+    img: getCountryFlagUrl(athlete.country2Code),
+    Country: athlete.birthCountry,
+    State: athlete.birthState ?? undefined,
+    City: athlete.birthCity,
+    label: athlete[fields[0]] ?? '',
+    count: 1,
+    key: label,
+  };
+}
+
 export default function RegionList({
   sport,
   regionType,
@@ -24,50 +50,37 @@ export default function RegionList({
     queryKey: ['Regions', sport, regionType],
     enabled: showRegions,
     queryFn: async ({ signal }) => {
-      const regionFields = {
-        City: ['birthCity', 'birthState', 'birthCountry', 'country2Code'],
-        State: ['birthState', 'birthCountry', 'country2Code'],
-        Country: ['birthCountry', 'country2Code'],
-      };
-
-      const fields = regionFields[regionType];
-
-      const feats = await athletesLayer?.queryFeatures(
-        {
-          where: `type = '${sport}'`,
-          returnGeometry: false,
-          groupByFieldsForStatistics: fields,
-          orderByFields: ['count(*) desc'],
-          outStatistics: [
-            {
-              statisticType: 'count',
-              onStatisticField: '*',
-              outStatisticFieldName: 'countOFExpr',
-            },
-          ],
-        },
+      const res = await athletesLayer?.queryFeatures(
+        { returnGeometry: false },
         { signal }
       );
-      return feats?.features
-        .filter((athlete) => athlete.attributes[fields[0]])
-        .map(
-          ({ attributes }) =>
-            ({
-              img: getCountryFlagUrl(attributes.country2Code),
-              Country: attributes.birthCountry,
-              State: attributes.birthState ?? undefined,
-              City: attributes.birthCity,
-              count: attributes.countOFExpr,
-              label: attributes[fields[0]],
-            } as Region)
-        );
+
+      if (!res) return [];
+
+      const regions: Region[] = [];
+
+      for (const { attributes } of res.features) {
+        const region = createRegionFromAthlete(attributes, regionType);
+        const index = regions.findIndex((r) => r.key === region.key);
+
+        if (index === -1) {
+          regions.push(region);
+        } else {
+          regions[index].count++;
+        }
+      }
+
+      return regions
+        .filter((region) => region.label)
+        .sort((a, b) => b.count - a.count);
     },
   });
+
   return (
     <ListContainer loading={regionsLoading}>
       {Regions?.map((region) => (
         <RegionListItem
-          key={region.label}
+          key={region.key}
           region={region}
           onRegionClick={onRegionClick}
         />

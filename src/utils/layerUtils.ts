@@ -1,8 +1,9 @@
 export const replaceFeatures = (
   layer: __esri.FeatureLayer,
-  features: __esri.Graphic[]
+  features: __esri.Graphic[],
+  signal: AbortSignal
 ) =>
-  layer.queryFeatures().then((result) =>
+  layer.queryFeatures(undefined, { signal }).then((result) =>
     layer.applyEdits({
       deleteFeatures: result.features,
       addFeatures: features,

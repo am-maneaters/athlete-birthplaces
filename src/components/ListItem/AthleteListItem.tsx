@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { CalciteListItem } from '@esri/calcite-components-react';
-import { Athlete } from '../../schemas/athleteSchema';
-import { Sport, getAthleteHeadshotUrl } from '../../utils/imageUtils';
+import { getAthleteHeadshotUrl } from '../../utils/imageUtils';
+import { Athlete } from '../../types';
+import { formatHeight, formatWeight } from '../../utils/stringUtils';
 
 export interface AthleteListItemProps {
   athlete: Athlete;
@@ -13,26 +14,28 @@ export interface AthleteListItemProps {
 }
 
 export const AthleteListItem = ({
-  athlete: {
-    id,
-    fullName,
-    birthPlace,
-    type,
-    jersey,
-    displayHeight,
-    displayWeight,
-    dateOfBirth,
-  },
+  athlete,
   onClick,
   teamLogoUrl,
   mode = 'card',
 }: AthleteListItemProps) => {
+  const {
+    id,
+    firstName,
+    lastName,
+    birthPlace,
+    league,
+    jersey,
+    height,
+    weight,
+    dateOfBirth,
+  } = athlete;
+  console.log(athlete);
   const [showImage, setShowImage] = React.useState(true);
-
   return mode === 'card' ? (
     <CalciteListItem
-      label={fullName}
-      description={birthPlace}
+      label={`${firstName} ${lastName}`}
+      description={birthPlace ?? 'N/AA'}
       onClick={onClick}
     >
       <div
@@ -48,7 +51,7 @@ export const AthleteListItem = ({
         />
         {showImage && (
           <img
-            src={getAthleteHeadshotUrl(id, type as Sport, { h: 100, w: 140 })}
+            src={getAthleteHeadshotUrl(id, league ?? '')}
             alt="Athlete Headshot"
             height="100px"
             width="140px"
@@ -65,7 +68,9 @@ export const AthleteListItem = ({
       </div>
       <div slot="content">
         <div className="flex items-baseline gap-1">
-          <span className="text-1">{fullName}</span>
+          <span className="text-1">
+            {firstName} {lastName}
+          </span>
           <span className="text-n3 text-color-3">#{jersey}</span>
         </div>
         <div className="flex items-center text-n3">
@@ -74,19 +79,17 @@ export const AthleteListItem = ({
       </div>
 
       <div slot="content-end" className="flex flex-col mr-2 text-n3 items-end">
-        <span>{displayHeight}</span>
-        <span>{displayWeight}</span>
+        <span>{formatHeight(height)}</span>
+        <span>{formatWeight(weight)}</span>
         {dateOfBirth !== null && (
-          <span>
-            {new Date(Number(dateOfBirth)).toLocaleDateString('en-US')}
-          </span>
+          <span>{new Date(dateOfBirth).toLocaleDateString('en-US')}</span>
         )}
       </div>
     </CalciteListItem>
   ) : (
     <CalciteListItem
-      label={fullName}
-      description={birthPlace}
+      label={`${firstName} ${lastName}`}
+      description={birthPlace ?? 'N/AA?'}
       onClick={onClick}
     />
   );

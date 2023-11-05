@@ -1,3 +1,5 @@
+import { supabase } from '../contexts/SupabaseContext';
+
 export enum Sport {
   Hockey = 'hockey',
   Football = 'football',
@@ -11,36 +13,31 @@ export const sports = [
   Sport.Basketball,
   Sport.Baseball,
 ];
-const leagueLookup = {
+export const leagueLookup = {
   [Sport.Hockey]: 'nhl',
   [Sport.Football]: 'nfl',
   [Sport.Basketball]: 'nba',
   [Sport.Baseball]: 'mlb',
 };
 
-type ImageOptions = {
-  h?: number;
-  w?: number;
-  transparent?: boolean;
-};
-
-export const getAthleteHeadshotUrl = (
-  athleteId: number,
-  sport: Sport,
-  { h = 100, w = 100 }: ImageOptions
-) =>
-  `https://a.espncdn.com/combiner/i?img=/i/headshots/${leagueLookup[sport]}/players/full/${athleteId}.png&h=${h}&w=${w}&scale=crop`;
+export const getAthleteHeadshotUrl = (athleteId: number, league: string) =>
+  supabase.storage
+    .from('athlete-headshots')
+    .getPublicUrl(`${league.toLowerCase()}/${athleteId}.webp`).data.publicUrl;
 
 export const getLeagueLogoUrl = (sport: Sport) =>
-  new URL(`../images/leagueLogos/${leagueLookup[sport]}.png`, import.meta.url)
-    .href;
+  supabase.storage
+    .from('league-logos')
+    .getPublicUrl(`${leagueLookup[sport].toLowerCase()}.webp`).data.publicUrl;
 
 export const getTeamLogoUrl = (teamAbbreviation: string, league: string) =>
-  new URL(
-    `../images/${league.toLowerCase()}/${teamAbbreviation.toLowerCase()}.png`,
-    import.meta.url
-  ).href;
+  supabase.storage
+    .from('team-logos')
+    .getPublicUrl(
+      `${league.toLowerCase()}/${teamAbbreviation.toLowerCase()}.png`
+    ).data.publicUrl;
 
 export const getCountryFlagUrl = (countryCode: string) =>
-  new URL(`../images/flags/${countryCode.toLowerCase()}.png`, import.meta.url)
-    .href;
+  supabase.storage
+    .from('country-flags')
+    .getPublicUrl(`${countryCode.toLowerCase()}.webp`).data.publicUrl;

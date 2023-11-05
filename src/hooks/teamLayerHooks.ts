@@ -1,37 +1,23 @@
-import { useEffect } from 'react';
-import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
+import { useEffect, useMemo } from 'react';
 
 import UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import { useQuery } from '@tanstack/react-query';
 import { replaceFeatures } from '../utils/layerUtils';
-import FeatureFilter from '@arcgis/core/layers/support/FeatureFilter';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
-import { array } from 'yup';
-import {
-  useFeatureLayer,
-  useFeatureLayerView,
-} from '../arcgisUtils/useGraphicsLayer';
-import { Team, teamSchema } from '../schemas/teamSchema';
-import { graphicSchema } from '../schemas/graphicSchema';
-import { PointGraphic } from '../typings/AthleteTypes';
-import { getTeamLogoUrl } from '../utils/imageUtils';
+import { useFeatureLayer } from '../arcgisUtils/useGraphicsLayer';
 
-const nhlTeamsLayerUrl =
-  'https://services1.arcgis.com/wQnFk5ouCfPzTlPw/arcgis/rest/services/ESPN_Big_Four_Teams/FeatureServer/0';
+import { Sport, getTeamLogoUrl, leagueLookup } from '../utils/imageUtils';
+import { useSupabase } from '../contexts/SupabaseContext';
+import { PointGraphic } from '../typings/AthleteTypes';
+import { Team } from '../types';
 
 export function useTeamsLayer(
   mapView: __esri.MapView | undefined,
-  selectedTeamId: string | undefined,
-  selectedSport: string
+  selectedSport: Sport
 ) {
-  const baseTeamLayer = useFeatureLayer(mapView, {
-    url: nhlTeamsLayerUrl,
-    title: 'NHL Teams',
-    outFields: ['*'],
-    visible: false,
-  });
+  const supabase = useSupabase();
 
   const teamsLayer = useFeatureLayer(mapView, {
     title: 'Team Points',
@@ -62,87 +48,80 @@ export function useTeamsLayer(
         alias: 'name',
         type: 'string',
       },
+      {
+        name: 'espn_id',
+        alias: 'espn_id',
+        type: 'string',
+      },
     ],
   });
 
-  const teamsView = useFeatureLayerView(mapView, baseTeamLayer);
-
-  useEffect(() => {
-    if (!mapView || !teamsView) return;
-
-    const sportTypeFilter = new FeatureFilter({
-      where: `type = '${selectedSport}'`,
-    });
-
-    teamsView.filter = sportTypeFilter;
-  }, [mapView, selectedSport, teamsView]);
-
-  //   Apply feature effect to the teams layer
-  useEffect(() => {
-    if (!mapView || !selectedTeamId) {
-      // Clear the feature effect
-      // @ts-expect-error - maps sdk types are wrong
-      teamsLayer.featureEffect = undefined;
-      return;
-    }
-
-    teamsLayer.featureEffect = new FeatureEffect({
-      excludedEffect: 'opacity(20%)',
-      filter: {
-        where: `id = '${selectedTeamId}'`,
-      },
-      excludedLabelsVisible: false,
-    });
-  }, [teamsLayer, mapView, selectedTeamId]);
-
   //  Query the base team layer for the selected sport
   const teamQuery = useQuery({
-    queryKey: ['teamInfo', selectedSport, teamSchema],
-    queryFn: async ({ signal }) => {
-      const features = await baseTeamLayer.queryFeatures(
-        {
-          where: `type = '${selectedSport}'`,
-          outFields: ['*'],
-          returnGeometry: true,
-        },
-        { signal }
-      );
-      return array()
-        .of(graphicSchema(teamSchema))
-        .validate(features.features) as Promise<PointGraphic<Team>[]>;
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
+    queryKey: ['teamInfo', selectedSport],
+    queryFn: async ({ signal }) =>
+      supabase
+        .from('Teams')
+        .select('*')
+        .eq('league', leagueLookup[selectedSport])
+        .abortSignal(signal),
+    throwOnError: true,
+    select: ({ data }) => {
+      if (!data) return;
+      return data.map((team) => ({
+        ...team,
+        logo: getTeamLogoUrl(team.abbreviation, team.league),
+      }));
     },
+  });
+
+  const teamsGraphics = useMemo(() => {
+    const { data: teamFeatures } = teamQuery;
+    if (!teamFeatures) return;
+    const newFeatures = teamFeatures.map(
+      ({ latitude, longitude, ...attributes }) =>
+        new Graphic({
+          geometry: new Point({
+            longitude: longitude ?? undefined,
+            latitude: latitude ?? undefined,
+          }),
+          attributes: { ...attributes },
+        }) as PointGraphic<Team>
+    );
+
+    return newFeatures;
+  }, [teamQuery]);
+
+  useQuery({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
+    queryKey: ['replaceFeatures', teamsGraphics],
+    queryFn: async ({ signal }) =>
+      teamsGraphics ? replaceFeatures(teamsLayer, teamsGraphics, signal) : null,
   });
 
   //  Replace features in the teams layer
   useEffect(() => {
-    const { data: teamFeatures } = teamQuery;
-    if (!teamFeatures || !teamsLayer) return;
+    if (!teamsLayer || !teamsGraphics) return;
 
     teamsLayer.renderer = new UniqueValueRenderer({
       field: 'name',
-      uniqueValueInfos: teamFeatures.map(({ attributes }) => ({
-        value: attributes.name,
-        symbol: new PictureMarkerSymbol({
-          url: getTeamLogoUrl(attributes.abbreviation, attributes.league),
-          width: '48px',
-          height: '48px',
-        }),
-      })),
-    });
-
-    const newFeatures = teamFeatures.map(
-      ({ geometry, attributes }) =>
-        new Graphic({
-          geometry: new Point({
-            longitude: geometry.longitude,
-            latitude: geometry.latitude,
+      uniqueValueInfos: teamsGraphics.map(
+        ({ attributes: { name, abbreviation, league } }) => ({
+          value: name,
+          symbol: new PictureMarkerSymbol({
+            url: getTeamLogoUrl(abbreviation, league),
+            width: '48px',
+            height: '48px',
           }),
-          attributes: { ...attributes },
         })
-    );
+      ),
+    });
+  }, [teamsGraphics, teamsLayer]);
 
-    replaceFeatures(teamsLayer, newFeatures);
-  }, [baseTeamLayer.fields, teamQuery, teamsLayer]);
-
-  return { teamsLayer, teamQuery };
+  return {
+    teamsLayer,
+    teamsLoading: teamQuery.isLoading,
+    teams: teamsGraphics,
+  };
 }

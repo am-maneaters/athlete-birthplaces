@@ -1,8 +1,8 @@
 import React from 'react';
 import { useOnEvent } from '../arcgisUtils/useOnEvent';
-import { Athlete } from '../schemas/athleteSchema';
 import { isGraphicsHit } from '../utils/esriUtils';
 import { autoPlacement, autoUpdate, useFloating } from '@floating-ui/react-dom';
+import { Athlete } from '../types';
 
 type Props = {
   mapView: __esri.MapView;
@@ -64,7 +64,9 @@ export function AthleteHover({ mapView, athletesLayer }: Props) {
             key={athlete.id}
             className="bg-foreground-1 text-black p-2 rounded-md shadow-md"
           >
-            <div className="text-n3">{athlete.fullName}</div>
+            <div className="text-n3">
+              {athlete.firstName} {athlete.lastName}
+            </div>
             {/* <div className="text-2h">{athlete.teamId}</div> */}
           </div>
         ))}

@@ -1,7 +1,4 @@
-export interface PointGraphic<T> {
+export interface PointGraphic<T> extends __esri.Graphic {
   attributes: T;
-  geometry: {
-    latitude: number;
-    longitude: number;
-  };
+  geometry: __esri.Point;
 }
