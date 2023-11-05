@@ -181,7 +181,7 @@ export function AppPanel({
           </CalciteTabNav>
         )}
 
-        <div className="flex flex-col bg-foreground-2 w-[400px] h-full">
+        <div className="flex flex-col bg-foreground-2 w-screen s:w-[400px] s:h-full">
           {showTeamAthletes && (
             <>
               <PanelHeader

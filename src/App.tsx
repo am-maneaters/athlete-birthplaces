@@ -56,7 +56,7 @@ export function App() {
           mapViewProps={mapProps}
           style={{ height: '100vh' }}
         >
-          <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
+          <div className="absolute inset-0 s:inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto">
             <AppPanel
               initialSport={sport}
               initialTeamId={teamId}
