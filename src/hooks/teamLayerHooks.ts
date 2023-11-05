@@ -58,6 +58,7 @@ export function useTeamsLayer(
 
   //  Query the base team layer for the selected sport
   const teamQuery = useQuery({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: ['teamInfo', selectedSport],
     queryFn: async ({ signal }) =>
       supabase
@@ -81,7 +82,10 @@ export function useTeamsLayer(
     const newFeatures = teamFeatures.map(
       ({ latitude, longitude, ...attributes }) =>
         new Graphic({
-          geometry: new Point({ longitude, latitude }),
+          geometry: new Point({
+            longitude: longitude ?? undefined,
+            latitude: latitude ?? undefined,
+          }),
           attributes: { ...attributes },
         }) as PointGraphic<Team>
     );
@@ -90,6 +94,7 @@ export function useTeamsLayer(
   }, [teamQuery]);
 
   useQuery({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: ['replaceFeatures', teamsGraphics],
     queryFn: async ({ signal }) =>
       teamsGraphics ? replaceFeatures(teamsLayer, teamsGraphics, signal) : null,
