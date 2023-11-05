@@ -30,7 +30,7 @@ export const AthleteListItem = ({
     weight,
     dateOfBirth,
   } = athlete;
-  console.log(athlete);
+
   const [showImage, setShowImage] = React.useState(true);
   return mode === 'card' ? (
     <CalciteListItem

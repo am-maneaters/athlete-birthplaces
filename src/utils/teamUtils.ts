@@ -14,7 +14,6 @@ export function getTeamLineColor(team: PointGraphic<Team>) {
 
   const primaryContrast = getContrastRatio(primaryColor, backgroundColor);
   const secondaryContrast = getContrastRatio(secondaryColor, backgroundColor);
-  console.log(primaryContrast, secondaryContrast);
 
   let isPrimary = primaryContrast > secondaryContrast;
 

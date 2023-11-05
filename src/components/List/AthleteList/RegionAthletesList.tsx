@@ -53,8 +53,6 @@ export default function RegionAthletesList({
 
       if (!features) return [];
 
-      console.log(features.features);
-
       return features.features.map((f) => f.attributes as Athlete);
     },
   });

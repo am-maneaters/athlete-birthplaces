@@ -79,8 +79,6 @@ export default function TeamAthletesList({
     select: (data) => (data?.length === 0 ? undefined : data),
   });
 
-  console.log(teamAthletes);
-
   useQuery({
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: ['playerLines', team, teamAthletes, playerLineLayer],

@@ -50,6 +50,14 @@ export function AppPanel({
     window.history.replaceState({}, '', `?${params.toString()}`);
   }, [selectedTeamId, selectedPlayerId, sport]);
 
+  // Whenever the sport changes, change the favicon
+  useEffect(() => {
+    if (!sport) return;
+
+    const favicon = document.querySelector('#favicon') as HTMLLinkElement;
+    favicon.href = getLeagueLogoUrl(sport);
+  }, [sport]);
+
   const { teamsLayer, teamsLoading, teams } = useTeamsLayer(mapView, sport);
 
   const handleSportChange = (sport: Sport) => {
@@ -81,16 +89,33 @@ export function AppPanel({
 
   const [selectedRegion, setSelectedRegion] = useState<Region>();
 
-  const team = useMemo(
+  const selectedTeam = useMemo(
     () =>
       teams?.find((f) => f.attributes.espn_id.toString() === selectedTeamId),
     [teams, selectedTeamId]
   );
 
-  const { athletesLayer } = useAthletesLayer(mapView, team, sport);
+  useEffect(() => {
+    // set the favicon and title
+
+    document.title = selectedTeam
+      ? `${selectedTeam.attributes.name} Players`
+      : 'Athlete Birthplaces';
+
+    // if (!selectedTeam) return;
+
+    // const favicon = document.querySelector('#favicon') as HTMLLinkElement;
+    // const teamImage = getTeamLogoUrl(
+    //   selectedTeam.attributes.abbreviation,
+    //   leagueLookup[sport]
+    // );
+    // favicon.href = teamImage;
+  }, [selectedTeam, sport]);
+
+  const { athletesLayer } = useAthletesLayer(mapView, selectedTeam, sport);
 
   const showRegionAthletes = panelMode === 'Regions' && !!selectedRegion;
-  const showTeamAthletes = panelMode === 'Teams' && !!team;
+  const showTeamAthletes = panelMode === 'Teams' && !!selectedTeam;
 
   useEffect(() => {
     if (!selectedTeamId) {
@@ -138,7 +163,6 @@ export function AppPanel({
 
     if (isGraphicsHit(firstHit)) {
       const { graphic } = firstHit;
-      console.log(graphic);
 
       if (!Object.hasOwn(graphic.attributes, 'teamId'))
         throw new Error('Could not get team id');
@@ -186,16 +210,16 @@ export function AppPanel({
             <>
               <PanelHeader
                 bgColor={
-                  team.attributes.color
-                    ? `#${team.attributes.color}`
+                  selectedTeam.attributes.color
+                    ? `#${selectedTeam.attributes.color}`
                     : undefined
                 }
                 onBackClick={() => handleTeamSelect(undefined)}
-                title={team.attributes.location}
-                subtitle={team.attributes.name}
+                title={selectedTeam.attributes.location}
+                subtitle={selectedTeam.attributes.name}
                 logo={getTeamLogoUrl(
-                  team.attributes.abbreviation,
-                  team.attributes.league
+                  selectedTeam.attributes.abbreviation,
+                  selectedTeam.attributes.league
                 )}
               />
               <TeamAthletesList
@@ -204,7 +228,7 @@ export function AppPanel({
                 sport={sport}
                 mapView={mapView}
                 athletesLayer={athletesLayer}
-                team={team}
+                team={selectedTeam}
               />
             </>
           )}
@@ -256,7 +280,7 @@ export function AppPanel({
               />
             </>
           )}
-          {panelMode === 'Teams' && !team && (
+          {panelMode === 'Teams' && !selectedTeam && (
             <>
               <PanelHeader
                 title={
