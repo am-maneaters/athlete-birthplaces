@@ -14,15 +14,15 @@ import { Athlete, Team } from '../../../types';
 
 const sortingFields: SortField[] = [
   {
-    field: 'birthCountry',
-    label: 'Country',
-    group: true,
-  },
-  {
     field: 'birthState',
     altField: 'birthCountry',
     group: true,
-    label: 'State',
+    label: 'State/Country',
+  },
+  {
+    field: 'birthCountry',
+    label: 'Country',
+    group: true,
   },
   { field: 'lastName', label: 'Last Name' },
   { field: 'weight', label: 'Weight' },

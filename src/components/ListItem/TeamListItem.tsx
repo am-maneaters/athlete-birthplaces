@@ -10,15 +10,7 @@ export function TeamListItem({
   onClick: (team: Team) => void;
 }) {
   return (
-    <CalciteListItem
-      label={team.name}
-      onClick={() => onClick(team)}
-      style={
-        {
-          // '--calcite-ui-foreground-1': team.alternateColor,
-        }
-      }
-    >
+    <CalciteListItem label={team.name} onClick={() => onClick(team)}>
       <div
         slot="content-start"
         className="flex relative overflow-y-clip w-[100px] h-[100px] content-center"
@@ -29,18 +21,17 @@ export function TeamListItem({
           height="100px"
           width="140px"
           loading="lazy"
+          className="ml-2"
         />
       </div>
-      <div
-        slot="content"
-        className="flex flex-col items-end"
-        // style={{ color: team.color }}
-      >
+      <div slot="content" className="flex flex-col items-end">
         <div className="flex items-center text-2 font-bold text-end">
           {team.displayName}
         </div>
         <div className="flex items-center text-n2 font-bold text-end">
-          <span>{team.venueAddress}</span>
+          <span>
+            {team.venueName}, {team.venueCity}
+          </span>
         </div>
       </div>
     </CalciteListItem>

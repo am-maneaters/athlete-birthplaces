@@ -5,14 +5,12 @@ import {
 } from '@esri/calcite-components-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Sport, getLeagueLogoUrl, getTeamLogoUrl } from '../utils/imageUtils';
-import { TeamListItem } from './ListItem/TeamListItem';
 import { useAthletesLayer } from '../hooks/athleteLayerHooks';
 import { PanelHeader } from './PanelHeader';
 
 import { useOnEvent } from '../arcgisUtils/useOnEvent';
 import { isGraphicsHit } from '../utils/esriUtils';
 import { Region } from './ListItem/RegionListItem';
-import { ListContainer } from './List/ListContainer';
 import RegionList, { createRegionFromAthlete } from './List/RegionList';
 import TeamAthletesList from './List/AthleteList/TeamAthletesList';
 import RegionAthletesList from './List/AthleteList/RegionAthletesList';
@@ -20,25 +18,39 @@ import { Athlete } from '../types';
 import { useMapView } from '../arcgisUtils/MapViewComponent';
 import FeatureEffect from '@arcgis/core/layers/support/FeatureEffect';
 import { useTeamsLayer } from '../hooks/teamLayerHooks';
+import { TeamList } from './List/TeamList';
 
 const TABS = ['Teams', 'Regions'] as const;
 
-export function TeamPanel() {
+export function AppPanel({
+  initialSport,
+  initialTeamId,
+  initialPlayerId,
+}: {
+  initialSport?: Sport;
+  initialTeamId?: string;
+  initialPlayerId?: string;
+}) {
   const mapView = useMapView();
 
-  const [selectedTeamId, setSelectedTeamId] = useState<string>();
+  const [selectedTeamId, setSelectedTeamId] = useState(initialTeamId);
 
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>();
+  const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId);
 
   const [panelMode, setPanelMode] = useState<'Teams' | 'Regions'>('Teams');
 
-  const [sport, setSport] = useState(Sport.Hockey);
+  const [sport, setSport] = useState(initialSport ?? Sport.Hockey);
 
-  const {
-    teamsLayer,
-    isLoading,
-    teamsGraphics: teams,
-  } = useTeamsLayer(mapView, sport);
+  useEffect(() => {
+    // update url params when teamId, playerId, or sport changes
+    const params = new URLSearchParams();
+    params.set('teamId', selectedTeamId ?? '');
+    params.set('playerId', selectedPlayerId ?? '');
+    params.set('sport', sport);
+    window.history.replaceState({}, '', `?${params.toString()}`);
+  }, [selectedTeamId, selectedPlayerId, sport]);
+
+  const { teamsLayer, teamsLoading, teams } = useTeamsLayer(mapView, sport);
 
   const handleSportChange = (sport: Sport) => {
     setSport(sport);
@@ -126,13 +138,12 @@ export function TeamPanel() {
 
     if (isGraphicsHit(firstHit)) {
       const { graphic } = firstHit;
+      console.log(graphic);
 
-      if (!Object.hasOwn(graphic.attributes, 'espn_id'))
+      if (!Object.hasOwn(graphic.attributes, 'teamId'))
         throw new Error('Could not get team id');
 
       const athlete = graphic.attributes as Athlete;
-
-      console.log(athlete);
 
       handlePanelModeChange('Regions');
       setRegionType('City');
@@ -265,19 +276,11 @@ export function TeamPanel() {
                 subtitle="Teams"
                 logo={getLeagueLogoUrl(sport)}
               />
-              <ListContainer loading={isLoading}>
-                {teams
-                  ?.sort((a, b) =>
-                    a.attributes.location.localeCompare(b.attributes.location)
-                  )
-                  .map((team) => (
-                    <TeamListItem
-                      key={team.attributes.espn_id}
-                      team={team.attributes}
-                      onClick={() => handleTeamSelect(team.attributes.espn_id)}
-                    />
-                  ))}
-              </ListContainer>
+              <TeamList
+                teams={teams}
+                onTeamSelect={handleTeamSelect}
+                loading={teamsLoading}
+              />
             </>
           )}
         </div>

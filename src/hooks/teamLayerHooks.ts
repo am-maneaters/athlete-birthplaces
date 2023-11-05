@@ -114,5 +114,9 @@ export function useTeamsLayer(
     });
   }, [teamsGraphics, teamsLayer]);
 
-  return { teamsLayer, isLoading: teamQuery.isLoading, teamsGraphics };
+  return {
+    teamsLayer,
+    teamsLoading: teamQuery.isLoading,
+    teams: teamsGraphics,
+  };
 }

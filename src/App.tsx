@@ -5,7 +5,8 @@ import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 import { CalciteShell } from '@esri/calcite-components-react';
 
 import Basemap from '@arcgis/core/Basemap';
-import { TeamPanel } from './components/TeamPanel';
+import { AppPanel } from './components/AppPanel';
+import { Sport } from './utils/imageUtils';
 
 const mapProps: __esri.MapViewProperties = {
   ui: { components: [] },
@@ -27,7 +28,26 @@ const basemap = new Basemap({
   ],
 });
 
+const useSearchParams = () => {
+  const search = window.location.search;
+  const params = new URLSearchParams(search);
+  const sportParam = params.get('sport');
+  const teamIdParam = params.get('teamId');
+  const playerIdParam = params.get('playerId');
+
+  // make sure sport is valid
+  const sport = Object.values(Sport).includes(sportParam as Sport)
+    ? (sportParam as Sport)
+    : Sport.Hockey;
+
+  const teamId = teamIdParam ?? undefined;
+  const playerId = playerIdParam ?? undefined;
+
+  return { sport, teamId, playerId };
+};
+
 export function App() {
+  const { sport, teamId, playerId } = useSearchParams();
   return (
     <div>
       <CalciteShell className="calcite-mode-dark">
@@ -37,7 +57,11 @@ export function App() {
           style={{ height: '100vh' }}
         >
           <div className="absolute inset-4 flex justify-end items-start pointer-events-none [&>*]:pointer-events-auto ">
-            <TeamPanel />
+            <AppPanel
+              initialSport={sport}
+              initialTeamId={teamId}
+              initialPlayerId={playerId}
+            />
           </div>
         </MapViewComponent>
       </CalciteShell>
